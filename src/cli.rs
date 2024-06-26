@@ -5,11 +5,11 @@ use clap::{Parser, Subcommand};
 #[command(version, about, long_about = None)]
 pub struct Cli {
     #[command(subcommand)]
-    pub commands: UserSubCommand,
+    pub subcommand: SubCommand,
 }
 
 #[derive(Subcommand)]
-pub enum UserSubCommand {
+pub enum SubCommand {
     /// Create a regular note
     #[command(alias = "n")]
     Note { template: String, name: String },
