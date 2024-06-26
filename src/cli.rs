@@ -11,8 +11,10 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum UserSubCommand {
     /// Create a regular note
-    Note { template: String },
+    #[command(alias = "n")]
+    Note { template: String, name: String },
     /// Create a journal note
+    #[command(alias = "j")]
     Journal,
 }
 
