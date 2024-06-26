@@ -1,0 +1,82 @@
+use std::{
+    fs::{self, File},
+    io::{self, Write},
+    path::PathBuf,
+};
+
+use directories::ProjectDirs;
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+pub struct Config {
+    pub gereneral: GeneralConfig,
+    pub note: NoteConfig,
+    pub journal: JournalConfig,
+}
+
+#[derive(Deserialize)]
+pub struct GeneralConfig {
+    pub template_folder_path: String,
+}
+
+#[derive(Deserialize)]
+pub struct NoteConfig {
+    pub folder_path: String,
+}
+
+#[derive(Deserialize)]
+pub struct JournalConfig {
+    pub folder_path: String,
+}
+
+pub fn default_config_path() -> Option<PathBuf> {
+    let Some(dirs) = ProjectDirs::from("", "", "sb") else {
+        return None;
+    };
+
+    let mut path = dirs.config_dir().to_owned();
+    path.push("sb.toml");
+
+    Some(path)
+}
+
+impl Config {
+    pub fn load_config() -> Option<PathBuf> {
+        // Creates config directory if doesn't exist.
+        let default_path = default_config_path()?;
+        let default_parent = default_path.parent();
+
+        if let Some(parent) = default_parent {
+            if let Err(err) = fs::create_dir_all(parent) {
+                println!("error creating config directory: {:?}", err);
+                return Some(default_path);
+            }
+        } else {
+            println!("default parent directory not found.");
+        }
+
+        let new_file = File::options()
+            .read(true)
+            .write(true)
+            .create_new(true)
+            .open(&default_path);
+
+        match new_file {
+            Ok(mut new_file) => {
+                let default_file = include_bytes!("../resources/default-sb.toml");
+                match new_file.write_all(default_file) {
+                    Ok(()) => {
+                        println!("wrote default configuration file at {:?}", &default_path)
+                    }
+                    Err(err) => {
+                        println!("error writting default config file {:?}", err)
+                    }
+                }
+            }
+            Err(err) if err.kind() == io::ErrorKind::AlreadyExists => {}
+            Err(err) => println!("error creating config file at {:?}: {err:?}", &default_path),
+        }
+
+        Some(default_path)
+    }
+}

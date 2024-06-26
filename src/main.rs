@@ -1,12 +1,13 @@
 use crate::cli::{Cli, SubCommand};
 use crate::note::*;
 use clap::Parser;
+use config::Config;
 
 mod cli;
 mod config;
 mod note;
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     match &cli.subcommand {
@@ -17,5 +18,8 @@ fn main() {
             todo!()
         }
     }
-    println!("Working...");
+
+    Config::load_config();
+
+    Ok(())
 }

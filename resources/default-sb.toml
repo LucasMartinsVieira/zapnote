@@ -1,0 +1,8 @@
+[general]
+temaplate_folder_path = "/home/lucas/dev/"
+
+[note]
+folder_path = "/home/lucas/dev/sb_folder/"
+
+[journal]
+folder_path = "/home/lucas/dev/"
