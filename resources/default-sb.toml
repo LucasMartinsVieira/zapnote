@@ -1,5 +1,5 @@
 [general]
-temaplate_folder_path = "/path/to/folder/"
+template_folder_path = "/path/to/folder/"
 
 [note]
 folder_path = "/path/to/folder/"

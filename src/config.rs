@@ -9,7 +9,7 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct Config {
-    pub gereneral: GeneralConfig,
+    pub general: GeneralConfig,
     pub note: NoteConfig,
     pub journal: JournalConfig,
 }
@@ -29,21 +29,18 @@ pub struct JournalConfig {
     pub folder_path: String,
 }
 
-pub fn default_config_path() -> Option<PathBuf> {
-    let Some(dirs) = ProjectDirs::from("", "", "sb") else {
-        return None;
-    };
-
-    let mut path = dirs.config_dir().to_owned();
-    path.push("sb.toml");
-
-    Some(path)
-}
-
 impl Config {
+    pub fn get_default_config_path() -> Option<PathBuf> {
+        let dirs = ProjectDirs::from("", "", "sb")?;
+
+        let mut path = dirs.config_dir().to_owned();
+        path.push("sb.toml");
+
+        Some(path)
+    }
     pub fn load_config() -> Option<PathBuf> {
         // Creates config directory if doesn't exist.
-        let default_path = default_config_path()?;
+        let default_path = Self::get_default_config_path()?;
         let default_parent = default_path.parent();
 
         if let Some(parent) = default_parent {
@@ -55,6 +52,7 @@ impl Config {
             println!("default parent directory not found.");
         }
 
+        // Creates config file if doesn't exist.
         let new_file = File::options()
             .read(true)
             .write(true)

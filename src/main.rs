@@ -6,9 +6,12 @@ use config::Config;
 mod cli;
 mod config;
 mod note;
+mod utils;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
+
+    Config::load_config();
 
     match &cli.subcommand {
         SubCommand::Note { template, name } => {
@@ -18,8 +21,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             todo!()
         }
     }
-
-    Config::load_config();
 
     Ok(())
 }
