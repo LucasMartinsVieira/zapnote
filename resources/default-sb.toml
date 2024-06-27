@@ -1,8 +1,8 @@
 [general]
-temaplate_folder_path = "/home/lucas/dev/"
+temaplate_folder_path = "/path/to/folder/"
 
 [note]
-folder_path = "/home/lucas/dev/sb_folder/"
+folder_path = "/path/to/folder/"
 
 [journal]
-folder_path = "/home/lucas/dev/"
+folder_path = "/path/to/folder/"
