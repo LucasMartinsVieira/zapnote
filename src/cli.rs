@@ -17,9 +17,3 @@ pub enum SubCommand {
     #[command(alias = "j")]
     Journal,
 }
-
-#[derive(Subcommand)]
-pub enum Note {
-    /// Templalte
-    Template,
-}

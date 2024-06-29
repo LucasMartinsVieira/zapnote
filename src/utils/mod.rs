@@ -1,16 +1,17 @@
-use std::fs;
-
-use crate::config::Config;
+use crate::config::{Config, SubcommandType};
 
 pub fn get_template_folder_path() -> Result<String, Box<dyn std::error::Error>> {
-    let config_path = Config::get_default_config_path();
-    let mut template_path = String::from("");
+    let config = Config::read_config()?;
+    Ok(config.general.template_folder_path)
+}
 
-    if let Some(path) = config_path {
-        let config_file_contents = fs::read_to_string(path)?;
-        let config: Config = toml::from_str(&config_file_contents)?;
-        template_path = config.general.template_folder_path;
+pub fn get_command_folder_path(
+    command: SubcommandType,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let config = Config::read_config()?;
+
+    match command {
+        SubcommandType::Note => Ok(config.note.folder_path),
+        SubcommandType::Journal => Ok(config.journal.folder_path),
     }
-
-    Ok(template_path)
 }
