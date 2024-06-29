@@ -29,6 +29,11 @@ pub struct JournalConfig {
     pub folder_path: String,
 }
 
+pub enum SubcommandType {
+    Note,
+    Journal,
+}
+
 impl Config {
     pub fn get_default_config_path() -> Option<PathBuf> {
         let dirs = ProjectDirs::from("", "", "sb")?;
@@ -37,6 +42,17 @@ impl Config {
         path.push("sb.toml");
 
         Some(path)
+    }
+    pub fn read_config() -> Result<Config, Box<dyn std::error::Error>> {
+        let config_path = Config::get_default_config_path();
+
+        if let Some(path) = config_path {
+            let config_file_contents = fs::read_to_string(path)?;
+            let config: Config = toml::from_str(&config_file_contents)?;
+            Ok(config)
+        } else {
+            Err("Config path not found".into())
+        }
     }
     pub fn load_config() -> Option<PathBuf> {
         // Creates config directory if doesn't exist.
