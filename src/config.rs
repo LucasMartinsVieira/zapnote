@@ -7,6 +7,8 @@ use std::{
 use directories::ProjectDirs;
 use serde::Deserialize;
 
+use crate::errors::config::ConfigError;
+
 #[derive(Deserialize)]
 pub struct Config {
     pub general: GeneralConfig,
@@ -43,7 +45,7 @@ impl Config {
 
         Some(path)
     }
-    pub fn read_config() -> Result<Config, Box<dyn std::error::Error>> {
+    pub fn read_config() -> Result<Config, ConfigError> {
         let config_path = Config::get_default_config_path();
 
         if let Some(path) = config_path {
@@ -51,7 +53,7 @@ impl Config {
             let config: Config = toml::from_str(&config_file_contents)?;
             Ok(config)
         } else {
-            Err("Config path not found".into())
+            Err(ConfigError::ConfigPathNotFound)
         }
     }
     pub fn load_config() -> Option<PathBuf> {

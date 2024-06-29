@@ -5,6 +5,7 @@ use config::Config;
 
 mod cli;
 mod config;
+mod errors;
 mod note;
 mod utils;
 
