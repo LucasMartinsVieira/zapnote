@@ -46,7 +46,7 @@ impl Config {
         Some(path)
     }
     pub fn read_config() -> Result<Config, ConfigError> {
-        let config_path = Config::get_default_config_path();
+        let config_path = Self::get_default_config_path();
 
         if let Some(path) = config_path {
             let config_file_contents = fs::read_to_string(path)?;
