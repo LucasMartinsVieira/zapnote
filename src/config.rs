@@ -37,7 +37,7 @@ pub enum SubcommandType {
 }
 
 impl Config {
-    pub fn get_default_config_path() -> Option<PathBuf> {
+    pub fn get_default_path() -> Option<PathBuf> {
         let dirs = ProjectDirs::from("", "", "sb")?;
 
         let mut path = dirs.config_dir().to_owned();
@@ -46,7 +46,7 @@ impl Config {
         Some(path)
     }
     pub fn read_config() -> Result<Config, ConfigError> {
-        let config_path = Self::get_default_config_path();
+        let config_path = Self::get_default_path();
 
         if let Some(path) = config_path {
             let config_file_contents = fs::read_to_string(path)?;
@@ -56,9 +56,9 @@ impl Config {
             Err(ConfigError::ConfigPathNotFound)
         }
     }
-    pub fn load_config() -> Option<PathBuf> {
+    pub fn load() -> Option<PathBuf> {
         // Creates config directory if doesn't exist.
-        let default_path = Self::get_default_config_path()?;
+        let default_path = Self::get_default_path()?;
         let default_parent = default_path.parent();
 
         if let Some(parent) = default_parent {

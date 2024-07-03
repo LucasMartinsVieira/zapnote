@@ -12,7 +12,7 @@ mod utils;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
-    Config::load_config();
+    Config::load();
 
     match &cli.subcommand {
         SubCommand::Note { template, name } => {
