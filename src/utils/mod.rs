@@ -112,7 +112,7 @@ pub fn insert_template_into_file(
     }
 
     let config = Config::read_config()?;
-    let default_editor = config.general.default_editor;
+    let default_editor = config.general.editor;
 
     match default_editor.as_deref() {
         Some("") | None => {

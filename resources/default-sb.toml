@@ -1,5 +1,6 @@
 [general]
 template_folder_path = "/path/to/folder/"
+editor = ""                               # if this is not set it will use $EDITOR or vi.
 
 [note]
 folder_path = "/path/to/folder/"

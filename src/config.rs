@@ -19,7 +19,7 @@ pub struct Config {
 #[derive(Deserialize)]
 pub struct GeneralConfig {
     pub template_folder_path: String,
-    pub default_editor: Option<String>,
+    pub editor: Option<String>,
 }
 
 #[derive(Deserialize)]
