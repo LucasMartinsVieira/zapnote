@@ -34,9 +34,14 @@ pub fn get_templates_in_folder() -> Option<Vec<String>> {
     Some(dir_contents)
 }
 
-pub fn check_template_exist(template_name: String) {
+pub fn check_template(
+    template_name: String,
+    command: SubcommandType,
+    name: String,
+) -> Result<(), Box<dyn std::error::Error>> {
     let templates_vec = get_templates_in_folder();
 
+    // Check if template specified by user exists on template folder
     match templates_vec {
         Some(vec) => {
             if !vec.contains(&template_name) {
@@ -52,9 +57,28 @@ pub fn check_template_exist(template_name: String) {
             std::process::exit(1)
         }
     }
+
+    // Check if there's already a note with the same name specified by the user on the folder path
+    let path = get_command_folder_path(command)?;
+
+    let dir_contents: Vec<String> = fs::read_dir(&path)?
+        .filter_map(|entry| entry.ok())
+        .filter_map(|entry| entry.file_name().into_string().ok())
+        .filter(|name| name.ends_with(".md"))
+        .map(|name| name.trim_end_matches(".md").to_string())
+        .collect();
+
+    if dir_contents.contains(&name) {
+        eprintln!(
+            "There is already a note with the name: '{}' on that location",
+            &name
+        );
+        std::process::exit(1)
+    }
+
+    Ok(())
 }
 
-// TODO: change this to return a Result?
 pub fn get_template_file_contents(template_name: String) -> Option<String> {
     let template_folder_path = get_template_folder_path().ok();
 
