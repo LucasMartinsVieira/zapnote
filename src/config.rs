@@ -19,6 +19,7 @@ pub struct Config {
 #[derive(Deserialize)]
 pub struct GeneralConfig {
     pub template_folder_path: String,
+    pub default_editor: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -31,7 +32,7 @@ pub struct JournalConfig {
     pub folder_path: String,
 }
 
-pub enum SubcommandType {
+pub enum Subcommand {
     Note,
     Journal,
 }

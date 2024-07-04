@@ -1,20 +1,20 @@
-use std::{fs, path::PathBuf};
+use std::{env, ffi::CString, fs, path::PathBuf, process};
 
-use crate::config::{Config, SubcommandType};
+use nix::unistd::execvp;
+
+use crate::config::{Config, Subcommand};
 
 pub fn get_template_folder_path() -> Result<String, Box<dyn std::error::Error>> {
     let config = Config::read_config()?;
     Ok(config.general.template_folder_path)
 }
 
-pub fn get_command_folder_path(
-    command: SubcommandType,
-) -> Result<String, Box<dyn std::error::Error>> {
+pub fn get_command_folder_path(command: Subcommand) -> Result<String, Box<dyn std::error::Error>> {
     let config = Config::read_config()?;
 
     match command {
-        SubcommandType::Note => Ok(config.note.folder_path),
-        SubcommandType::Journal => Ok(config.journal.folder_path),
+        Subcommand::Note => Ok(config.note.folder_path),
+        Subcommand::Journal => Ok(config.journal.folder_path),
     }
 }
 
@@ -36,7 +36,7 @@ pub fn get_templates_in_folder() -> Option<Vec<String>> {
 
 pub fn check_template(
     template: &str,
-    command: SubcommandType,
+    command: Subcommand,
     name: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let templates_vec = get_templates_in_folder();
@@ -46,12 +46,12 @@ pub fn check_template(
         Some(vec) => {
             if !vec.contains(&template.to_owned()) {
                 eprintln!("template '{}' doesn't exist in template folder", template);
-                std::process::exit(1)
+                process::exit(1)
             }
         }
         None => {
             eprintln!("No templates found on folder");
-            std::process::exit(1)
+            process::exit(1)
         }
     }
 
@@ -70,7 +70,7 @@ pub fn check_template(
             "There is already a note with the name: '{}' on that location",
             &name
         );
-        std::process::exit(1)
+        process::exit(1)
     }
 
     Ok(())
@@ -97,7 +97,7 @@ pub fn get_template_file_contents(template: String) -> Option<String> {
 pub fn insert_template_into_file(
     template: String,
     name: String,
-    command: SubcommandType,
+    command: Subcommand,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let command_path_str = get_command_folder_path(command)?;
     let full_path = format!("{command_path_str}/{name}.md");
@@ -111,5 +111,30 @@ pub fn insert_template_into_file(
         fs::write(path, contents).unwrap();
     }
 
+    let config = Config::read_config()?;
+    let default_editor = config.general.default_editor;
+
+    match default_editor.as_deref() {
+        Some("") | None => {
+            let editor = env::var("EDITOR").unwrap_or("vi".to_string());
+            run_editor(&editor, path);
+        }
+        Some(editor) => {
+            run_editor(editor, path);
+        }
+    }
+
     Ok(())
+}
+
+fn run_editor(editor: &str, path: &str) {
+    // TODO: Do better error handling
+    let editor_cstr = CString::new(editor).expect("CString::new failed editor");
+    let path_cstr = CString::new(path).expect("CString::new failed path");
+    let args = [editor_cstr.clone(), path_cstr];
+
+    execvp(&editor_cstr, &args).unwrap_or_else(|err| {
+        eprintln!("error executing {}: {}", editor, err);
+        process::exit(1);
+    });
 }
