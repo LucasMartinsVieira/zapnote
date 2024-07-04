@@ -35,20 +35,17 @@ pub fn get_templates_in_folder() -> Option<Vec<String>> {
 }
 
 pub fn check_template(
-    template_name: String,
+    template: &str,
     command: SubcommandType,
-    name: String,
+    name: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let templates_vec = get_templates_in_folder();
 
     // Check if template specified by user exists on template folder
     match templates_vec {
         Some(vec) => {
-            if !vec.contains(&template_name) {
-                eprintln!(
-                    "template '{}' doesn't exist in template folder",
-                    template_name
-                );
+            if !vec.contains(&template.to_owned()) {
+                eprintln!("template '{}' doesn't exist in template folder", template);
                 std::process::exit(1)
             }
         }
@@ -68,7 +65,7 @@ pub fn check_template(
         .map(|name| name.trim_end_matches(".md").to_string())
         .collect();
 
-    if dir_contents.contains(&name) {
+    if dir_contents.contains(&name.to_owned()) {
         eprintln!(
             "There is already a note with the name: '{}' on that location",
             &name
@@ -79,12 +76,12 @@ pub fn check_template(
     Ok(())
 }
 
-pub fn get_template_file_contents(template_name: String) -> Option<String> {
+pub fn get_template_file_contents(template: String) -> Option<String> {
     let template_folder_path = get_template_folder_path().ok();
 
     if let Some(path) = template_folder_path {
         let mut template_file_path = PathBuf::from(path);
-        let template_name_with_extension = format!("{template_name}.md");
+        let template_name_with_extension = format!("{template}.md");
 
         template_file_path.push(&template_name_with_extension);
 
@@ -94,4 +91,25 @@ pub fn get_template_file_contents(template_name: String) -> Option<String> {
     } else {
         None
     }
+}
+
+// TODO: Do better error handling in this function
+pub fn insert_template_into_file(
+    template: String,
+    name: String,
+    command: SubcommandType,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let command_path_str = get_command_folder_path(command)?;
+    let full_path = format!("{command_path_str}/{name}.md");
+
+    let command_path_buf = PathBuf::from(full_path);
+    let path = command_path_buf.to_str().unwrap();
+
+    let template_file_contents = get_template_file_contents(template);
+
+    if let Some(contents) = template_file_contents {
+        fs::write(path, contents).unwrap();
+    }
+
+    Ok(())
 }

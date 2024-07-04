@@ -1,6 +1,6 @@
 use crate::{
     config::SubcommandType,
-    utils::{check_template, get_template_folder_path},
+    utils::{check_template, get_template_folder_path, insert_template_into_file},
 };
 
 pub fn handle_note_command(template: &str, name: &str) {
@@ -13,5 +13,7 @@ pub fn handle_note_command(template: &str, name: &str) {
 
     // If the template specified by the user doesn't exist on the path established by the user or
     // there is already a note with the same name specified by the user, the program exits with status code 1
-    check_template(template.into(), SubcommandType::Note, name.to_owned()).unwrap();
+    check_template(&template, SubcommandType::Note, &name).unwrap();
+
+    insert_template_into_file(template.to_owned(), name.to_owned(), SubcommandType::Note).unwrap();
 }
