@@ -6,6 +6,9 @@ use clap::{Parser, Subcommand};
 pub struct Cli {
     #[command(subcommand)]
     pub subcommand: SubCommand,
+    /// Only create the note and not run the editor
+    #[arg(short, long, global = true)]
+    pub no_editor: bool,
 }
 
 #[derive(Subcommand)]

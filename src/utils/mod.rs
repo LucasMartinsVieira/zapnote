@@ -1,8 +1,6 @@
-use std::{env, ffi::CString, fs, path::PathBuf, process};
-
-use nix::unistd::execvp;
-
 use crate::config::{Config, Subcommand};
+use nix::unistd::execvp;
+use std::{env, ffi::CString, fs, path::PathBuf, process};
 
 pub fn get_template_folder_path() -> Result<String, Box<dyn std::error::Error>> {
     let config = Config::read_config()?;
@@ -111,16 +109,21 @@ pub fn insert_template_into_file(
         fs::write(path, contents).unwrap();
     }
 
-    let config = Config::read_config()?;
-    let default_editor = config.general.editor;
+    let no_editor = env::var("SB_NO_EDITOR")?;
+    let parsed_no_editor: bool = no_editor.parse().unwrap_or(false);
 
-    match default_editor.as_deref() {
-        Some("") | None => {
-            let editor = env::var("EDITOR").unwrap_or("vi".to_string());
-            run_editor(&editor, path);
-        }
-        Some(editor) => {
-            run_editor(editor, path);
+    if !parsed_no_editor {
+        let config = Config::read_config()?;
+        let default_editor = config.general.editor;
+
+        match default_editor.as_deref() {
+            Some("") | None => {
+                let editor = env::var("EDITOR").unwrap_or("vi".to_string());
+                run_editor(&editor, path);
+            }
+            Some(editor) => {
+                run_editor(editor, path);
+            }
         }
     }
 
