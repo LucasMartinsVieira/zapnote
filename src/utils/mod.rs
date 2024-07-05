@@ -112,18 +112,22 @@ pub fn insert_template_into_file(
     let no_editor = env::var("SB_NO_EDITOR")?;
     let parsed_no_editor: bool = no_editor.parse().unwrap_or(false);
 
-    if !parsed_no_editor {
-        let config = Config::read_config()?;
-        let default_editor = config.general.editor;
+    // If the flag --no-editor is passed by user, the program exist with status code 0, before
+    // running the run_editor function.
+    if parsed_no_editor {
+        process::exit(0);
+    }
 
-        match default_editor.as_deref() {
-            Some("") | None => {
-                let editor = env::var("EDITOR").unwrap_or("vi".to_string());
-                run_editor(&editor, path);
-            }
-            Some(editor) => {
-                run_editor(editor, path);
-            }
+    let config = Config::read_config()?;
+    let default_editor = config.general.editor;
+
+    match default_editor.as_deref() {
+        Some("") | None => {
+            let editor = env::var("EDITOR").unwrap_or("vi".to_string());
+            run_editor(&editor, path);
+        }
+        Some(editor) => {
+            run_editor(editor, path);
         }
     }
 
