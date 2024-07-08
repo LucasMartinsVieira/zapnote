@@ -1,4 +1,4 @@
-use crate::config::{Config, Subcommand};
+use crate::config::{Config, Sub};
 use nix::unistd::execvp;
 use std::{env, ffi::CString, fs, path::PathBuf, process};
 
@@ -7,12 +7,12 @@ pub fn template_folder_path() -> Result<String, Box<dyn std::error::Error>> {
     Ok(config.general.template_folder_path)
 }
 
-pub fn command_folder_path(command: Subcommand) -> Result<String, Box<dyn std::error::Error>> {
+pub fn command_folder_path(command: Sub) -> Result<String, Box<dyn std::error::Error>> {
     let config = Config::read()?;
 
     match command {
-        Subcommand::Note => Ok(config.note.folder_path),
-        Subcommand::Journal => Ok(config.journal.folder_path),
+        Sub::Note => Ok(config.note.folder_path),
+        Sub::Journal => Ok(config.journal.folder_path),
     }
 }
 
@@ -34,7 +34,7 @@ pub fn templates_in_folder() -> Option<Vec<String>> {
 
 pub fn check_template(
     template: &str,
-    command: Subcommand,
+    command: Sub,
     name: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let templates_vec = templates_in_folder();
@@ -64,10 +64,7 @@ pub fn check_template(
         .collect();
 
     if dir_contents.contains(&name.to_owned()) {
-        eprintln!(
-            "There is already a note with the name: '{}' on that location",
-            &name
-        );
+        eprintln!("There is already a note with the name: '{}'", &name);
         process::exit(1)
     }
 
@@ -91,11 +88,10 @@ pub fn template_file_contents(template: String) -> Option<String> {
     }
 }
 
-// TODO: Do better error handling in this function
 pub fn insert_template_into_file(
     template: String,
     name: String,
-    command: Subcommand,
+    command: Sub,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let command_path_str = command_folder_path(command)?;
     let full_path = format!("{command_path_str}/{name}.md");
@@ -106,7 +102,10 @@ pub fn insert_template_into_file(
     let template_file_contents = template_file_contents(template);
 
     if let Some(contents) = template_file_contents {
-        fs::write(path, contents).unwrap();
+        if let Err(err) = fs::write(path, contents) {
+            eprintln!("error writing template into file: {:?}", err);
+            process::exit(1)
+        }
     }
 
     let no_editor = env::var("SB_NO_EDITOR")?;

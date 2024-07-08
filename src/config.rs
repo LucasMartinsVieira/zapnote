@@ -32,7 +32,7 @@ pub struct JournalConfig {
     pub folder_path: String,
 }
 
-pub enum Subcommand {
+pub enum Sub {
     Note,
     Journal,
 }
