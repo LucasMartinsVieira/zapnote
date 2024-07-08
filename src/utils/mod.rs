@@ -56,7 +56,7 @@ pub fn check_template(
     // Check if there's already a note with the same name specified by the user on the folder path
     let path = command_folder_path(command)?;
 
-    let dir_contents: Vec<String> = fs::read_dir(&path)?
+    let dir_contents: Vec<String> = fs::read_dir(path)?
         .filter_map(|entry| entry.ok())
         .filter_map(|entry| entry.file_name().into_string().ok())
         .filter(|name| name.ends_with(".md"))
