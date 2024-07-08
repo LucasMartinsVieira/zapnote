@@ -1,10 +1,10 @@
 use crate::{
     config::Subcommand,
-    utils::{check_template, get_template_folder_path, insert_template_into_file},
+    utils::{check_template, insert_template_into_file, template_folder_path},
 };
 
 pub fn handle_note_command(template: &str, name: &str) {
-    let template_path = get_template_folder_path();
+    let template_path = template_folder_path();
 
     match template_path {
         Ok(path) => println!("Template path: {}", path),

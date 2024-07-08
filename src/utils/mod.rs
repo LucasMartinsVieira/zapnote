@@ -2,13 +2,13 @@ use crate::config::{Config, Subcommand};
 use nix::unistd::execvp;
 use std::{env, ffi::CString, fs, path::PathBuf, process};
 
-pub fn get_template_folder_path() -> Result<String, Box<dyn std::error::Error>> {
-    let config = Config::read_config()?;
+pub fn template_folder_path() -> Result<String, Box<dyn std::error::Error>> {
+    let config = Config::read()?;
     Ok(config.general.template_folder_path)
 }
 
-pub fn get_command_folder_path(command: Subcommand) -> Result<String, Box<dyn std::error::Error>> {
-    let config = Config::read_config()?;
+pub fn command_folder_path(command: Subcommand) -> Result<String, Box<dyn std::error::Error>> {
+    let config = Config::read()?;
 
     match command {
         Subcommand::Note => Ok(config.note.folder_path),
@@ -16,8 +16,8 @@ pub fn get_command_folder_path(command: Subcommand) -> Result<String, Box<dyn st
     }
 }
 
-pub fn get_templates_in_folder() -> Option<Vec<String>> {
-    let path = get_template_folder_path().ok()?;
+pub fn templates_in_folder() -> Option<Vec<String>> {
+    let path = template_folder_path().ok()?;
 
     // Search in template directory for markdown files, put them in a Vec<String> and remove .md
     // from the files name
@@ -37,7 +37,7 @@ pub fn check_template(
     command: Subcommand,
     name: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let templates_vec = get_templates_in_folder();
+    let templates_vec = templates_in_folder();
 
     // Check if template specified by user exists on template folder
     match templates_vec {
@@ -54,7 +54,7 @@ pub fn check_template(
     }
 
     // Check if there's already a note with the same name specified by the user on the folder path
-    let path = get_command_folder_path(command)?;
+    let path = command_folder_path(command)?;
 
     let dir_contents: Vec<String> = fs::read_dir(&path)?
         .filter_map(|entry| entry.ok())
@@ -74,8 +74,8 @@ pub fn check_template(
     Ok(())
 }
 
-pub fn get_template_file_contents(template: String) -> Option<String> {
-    let template_folder_path = get_template_folder_path().ok();
+pub fn template_file_contents(template: String) -> Option<String> {
+    let template_folder_path = template_folder_path().ok();
 
     if let Some(path) = template_folder_path {
         let mut template_file_path = PathBuf::from(path);
@@ -97,13 +97,13 @@ pub fn insert_template_into_file(
     name: String,
     command: Subcommand,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let command_path_str = get_command_folder_path(command)?;
+    let command_path_str = command_folder_path(command)?;
     let full_path = format!("{command_path_str}/{name}.md");
 
     let command_path_buf = PathBuf::from(full_path);
     let path = command_path_buf.to_str().unwrap();
 
-    let template_file_contents = get_template_file_contents(template);
+    let template_file_contents = template_file_contents(template);
 
     if let Some(contents) = template_file_contents {
         fs::write(path, contents).unwrap();
@@ -118,7 +118,7 @@ pub fn insert_template_into_file(
         process::exit(0);
     }
 
-    let config = Config::read_config()?;
+    let config = Config::read()?;
     let default_editor = config.general.editor;
 
     match default_editor.as_deref() {
