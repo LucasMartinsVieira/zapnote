@@ -1,7 +1,11 @@
 [package]
-name = "sb"
+name = "zapnote"
 version = "0.1.0"
 edition = "2021"
+description = "Lightning-fast template-based note generator"
+license = "MIT"
+authors = ["Lucas Martins Vieira <lucasmartvieira03@outlook.com>"]
+repository = "https://github.com/LucasMartinsVieira/zapnote"
 
 [dependencies]
 clap = { version = "4.5.7", features = ["derive"] }
@@ -9,3 +13,7 @@ directories = "5.0.1"
 nix = { version = "0.29.0", features = ["process"] }
 serde = { version = "1.0.203", features = ["derive"] }
 toml = "0.8.14"
+
+[[bin]]
+name = "zn"
+path = "src/main.rs"

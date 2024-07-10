@@ -251,17 +251,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sb"
-version = "0.1.0"
-dependencies = [
- "clap",
- "directories",
- "nix",
- "serde",
- "toml",
-]
-
-[[package]]
 name = "serde"
 version = "1.0.203"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -525,4 +514,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59b5e5f6c299a3c7890b876a2a587f3115162487e704907d9b6cd29473052ba1"
 dependencies = [
  "memchr",
+]
+
+[[package]]
+name = "zapnote"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "directories",
+ "nix",
+ "serde",
+ "toml",
 ]
