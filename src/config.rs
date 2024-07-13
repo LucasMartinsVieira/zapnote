@@ -2,6 +2,7 @@ use std::{
     fs::{self, File},
     io::{self, Write},
     path::PathBuf,
+    process,
 };
 
 use directories::ProjectDirs;
@@ -39,10 +40,10 @@ pub enum Sub {
 
 impl Config {
     pub fn default_path() -> Option<PathBuf> {
-        let dirs = ProjectDirs::from("", "", "sb")?;
+        let dirs = ProjectDirs::from("", "", "zapnote")?;
 
         let mut path = dirs.config_dir().to_owned();
-        path.push("sb.toml");
+        path.push("zapnote.toml");
 
         Some(path)
     }
@@ -80,12 +81,15 @@ impl Config {
 
         match new_file {
             Ok(mut new_file) => {
-                let default_file = include_bytes!("../resources/default-sb.toml");
+                let default_file = include_bytes!("../resources/default-zapnote.toml");
                 match new_file.write_all(default_file) {
                     Ok(()) => {
-                        println!("wrote default configuration file at {:?}", &default_path)
+                        println!("default configuration file not found");
+                        println!("wrote default configuration file at {:?}", &default_path);
+                        process::exit(0);
                     }
                     Err(err) => {
+                        println!("default configuration file not found");
                         println!("error writting default config file {:?}", err)
                     }
                 }

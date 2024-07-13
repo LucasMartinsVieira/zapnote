@@ -16,9 +16,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Config::load();
 
     if cli.no_editor {
-        env::set_var("SB_NO_EDITOR", String::from("true"));
+        env::set_var("ZAPNOTE_NO_EDITOR", String::from("true"));
     } else {
-        env::set_var("SB_NO_EDITOR", String::from("false"));
+        env::set_var("ZAPNOTE_NO_EDITOR", String::from("false"));
     }
 
     match &cli.subcommand {

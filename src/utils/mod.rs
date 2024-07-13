@@ -108,7 +108,7 @@ pub fn insert_template_into_file(
         }
     }
 
-    let no_editor = env::var("SB_NO_EDITOR")?;
+    let no_editor = env::var("ZAPNOTE_NO_EDITOR")?;
     let parsed_no_editor: bool = no_editor.parse().unwrap_or(false);
 
     // If the flag --no-editor is passed by user, the program exist with status code 0, before
