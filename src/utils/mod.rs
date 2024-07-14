@@ -1,18 +1,32 @@
 use crate::config::{Config, Sub};
+use directories::BaseDirs;
 use nix::unistd::execvp;
-use std::{env, ffi::CString, fs, path::PathBuf, process};
+use std::{
+    env::{self},
+    ffi::CString,
+    fs,
+    path::PathBuf,
+    process,
+};
 
 pub fn template_folder_path() -> Result<String, Box<dyn std::error::Error>> {
     let config = Config::read()?;
-    Ok(config.general.template_folder_path)
+    let template_path = alternate_path(config.general.template_folder_path);
+    Ok(template_path)
 }
 
 pub fn command_folder_path(command: Sub) -> Result<String, Box<dyn std::error::Error>> {
     let config = Config::read()?;
 
     match command {
-        Sub::Note => Ok(config.note.folder_path),
-        Sub::Journal => Ok(config.journal.folder_path),
+        Sub::Note => {
+            let note_path = alternate_path(config.note.folder_path);
+            Ok(note_path)
+        }
+        Sub::Journal => {
+            let journal_path = alternate_path(config.journal.folder_path);
+            Ok(journal_path)
+        }
     }
 }
 
@@ -143,4 +157,16 @@ fn run_editor(editor: &str, path: &str) {
         eprintln!("error executing {}: {}", editor, err);
         process::exit(1);
     });
+}
+
+fn alternate_path(path: String) -> String {
+    if path.starts_with("~/") {
+        if let Some(base_dirs) = BaseDirs::new() {
+            let home_dir = base_dirs.home_dir().to_str().unwrap();
+
+            return path.replacen('~', home_dir, 1);
+        }
+    }
+
+    path
 }

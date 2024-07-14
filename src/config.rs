@@ -1,14 +1,15 @@
+// TODO: Remove this when start the implementation of Journal subcommand
+#![allow(dead_code)]
+
+use crate::errors::config::ConfigError;
+use directories::ProjectDirs;
+use serde::Deserialize;
 use std::{
     fs::{self, File},
     io::{self, Write},
     path::PathBuf,
     process,
 };
-
-use directories::ProjectDirs;
-use serde::Deserialize;
-
-use crate::errors::config::ConfigError;
 
 #[derive(Deserialize)]
 pub struct Config {
