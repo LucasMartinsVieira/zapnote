@@ -1,9 +1,11 @@
+# Default configuration file for zapnote, adjust the values to your liking.
+
 [general]
-template_folder_path = "/path/to/folder/"
-editor = ""                               # if this is not set it will use $EDITOR or vi.
+template_folder_path = "~/Notes/templates"
+editor = ""                                # if this is not set it will use $EDITOR or vi.
 
 [note]
-folder_path = "/path/to/folder/"
+folder_path = "~/Notes/"
 
 [journal]
-folder_path = "/path/to/folder/"
+folder_path = "~/Notes/journal"
