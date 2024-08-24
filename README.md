@@ -3,6 +3,8 @@
     <p>Lightning-fast template-based note generator</p>
 </div>
 
+<img src="./resources/zapnote.webp"></img>
+
 ## About
 
 Effective note-taking is essential for productivity and knowledge retention. For individuals with a terminal-based workflow, using a GUI application like [obsidian](https://obsidian.md) can be cumbersome for creating template-based notes. Zapnote adresses this by providing a lightning-fast, template-based note generation system that fits right into your command-line workflow.
