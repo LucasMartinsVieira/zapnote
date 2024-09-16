@@ -58,6 +58,14 @@ pub fn check_template(
         Some(vec) => {
             if !vec.contains(&template.to_owned()) {
                 eprintln!("template '{}' doesn't exist in template folder", template);
+                println!();
+
+                println!("Available templates: ");
+                println!();
+
+                // Iterate over the vector of template names and print each template name.
+                vec.iter()
+                    .for_each(|template_name| println!("{}", template_name));
                 process::exit(1)
             }
         }
