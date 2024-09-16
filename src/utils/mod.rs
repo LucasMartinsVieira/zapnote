@@ -170,3 +170,21 @@ fn alternate_path(path: String) -> String {
 
     path
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_alternate_path() {
+        if let Some(base_dirs) = BaseDirs::new() {
+            let home_dir = base_dirs.home_dir().to_str().unwrap();
+
+            let path_formated = format!("{}{}", home_dir, "/foo/bar");
+
+            assert_eq!(path_formated, alternate_path("~/foo/bar".to_owned()))
+        }
+
+        assert_eq!("/foo/bar", alternate_path("/foo/bar".to_owned()));
+    }
+}
