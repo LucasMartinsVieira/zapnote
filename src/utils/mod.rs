@@ -30,9 +30,7 @@ pub fn command_folder_path(command: Sub) -> Result<String, Box<dyn std::error::E
     }
 }
 
-pub fn templates_in_folder() -> Option<Vec<String>> {
-    let path = template_folder_path().ok()?;
-
+pub fn templates_in_folder(path: String) -> Option<Vec<String>> {
     // Search in template directory for markdown files, put them in a Vec<String> and remove .md
     // from the files name
     let dir_contents: Vec<String> = fs::read_dir(path)
@@ -51,7 +49,8 @@ pub fn check_template(
     command: Sub,
     name: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let templates_vec = templates_in_folder();
+    let path = template_folder_path()?;
+    let templates_vec = templates_in_folder(path);
 
     // Check if template specified by user exists on template folder
     match templates_vec {
@@ -182,6 +181,84 @@ fn alternate_path(path: String) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
+    use tempfile::TempDir;
+
+    #[test]
+    fn test_templates_in_folder_only_markdown_files() {
+        let temp_dir = TempDir::new().unwrap();
+        let template_dir = temp_dir.path().join("templates");
+        fs::create_dir(&template_dir).unwrap();
+
+        let markdown_files = ["template1.md", "template2.md"];
+        markdown_files
+            .iter()
+            .for_each(|file| fs::write(template_dir.join(file), "content").unwrap());
+
+        let template_dir_str = template_dir.to_str().unwrap();
+        let template_dir_string = template_dir_str.to_string();
+
+        let templates = templates_in_folder(template_dir_string).unwrap();
+        assert_eq!(
+            templates,
+            vec!["template1".to_string(), "template2".to_string()]
+        )
+    }
+
+    #[test]
+    fn test_templates_in_folder_with_markdown_non_markdown() {
+        let temp_dir = TempDir::new().unwrap();
+        let template_dir = temp_dir.path().join("templates");
+        fs::create_dir(&template_dir).unwrap();
+
+        let files = [
+            "template1.md",
+            "template2.md",
+            "not_a_template.pdf",
+            "not_a_template.txt",
+            "not_a_template.png",
+        ];
+
+        files
+            .iter()
+            .for_each(|file| fs::write(template_dir.join(file), "content").unwrap());
+
+        let template_dir_str = template_dir.to_str().unwrap();
+        let template_dir_string = template_dir_str.to_string();
+
+        let templates = templates_in_folder(template_dir_string).unwrap();
+        assert_eq!(
+            templates,
+            vec!["template1".to_string(), "template2".to_string()]
+        )
+    }
+
+    #[test]
+    fn test_templates_in_folder_no_markdown_files() {
+        let temp_dir = TempDir::new().unwrap();
+        let template_dir = temp_dir.path().join("templates");
+        fs::create_dir(&template_dir).unwrap();
+
+        let files = ["file1.txt", "file2.pdf"];
+
+        files
+            .iter()
+            .for_each(|file| fs::write(template_dir.join(file), "content").unwrap());
+
+        let template_dir_str = template_dir.to_str().unwrap();
+        let template_dir_string = template_dir_str.to_string();
+
+        let templates = templates_in_folder(template_dir_string);
+
+        assert_eq!(templates, Some(vec![]));
+    }
+
+    #[test]
+    fn test_templates_in_folder_not_exists() {
+        let templates = templates_in_folder("this/should/not/exist".to_string());
+
+        assert!(templates.is_none());
+    }
 
     #[test]
     fn test_alternate_path() {

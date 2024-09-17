@@ -17,3 +17,6 @@ toml = "0.8.14"
 [[bin]]
 name = "zn"
 path = "src/main.rs"
+
+[dev-dependencies]
+tempfile = "3.12.0"
