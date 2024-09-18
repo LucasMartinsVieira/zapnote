@@ -14,24 +14,14 @@ use std::{
 #[derive(Deserialize)]
 pub struct Config {
     pub general: GeneralConfig,
-    pub note: NoteConfig,
-    pub journal: JournalConfig,
 }
 
 #[derive(Deserialize)]
 pub struct GeneralConfig {
     pub template_folder_path: String,
     pub editor: Option<String>,
-}
-
-#[derive(Deserialize)]
-pub struct NoteConfig {
-    pub folder_path: String,
-}
-
-#[derive(Deserialize)]
-pub struct JournalConfig {
-    pub folder_path: String,
+    pub note_folder_path: String,
+    pub journal_folder_path: String,
 }
 
 pub enum Sub {

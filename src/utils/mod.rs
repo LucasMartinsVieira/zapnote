@@ -10,6 +10,7 @@ use std::{
 };
 
 pub fn template_folder_path() -> Result<String, Box<dyn std::error::Error>> {
+    // TODO: Refactor this for testing purposes?
     let config = Config::read()?;
     let template_path = alternate_path(config.general.template_folder_path);
     Ok(template_path)
@@ -20,11 +21,11 @@ pub fn command_folder_path(command: Sub) -> Result<String, Box<dyn std::error::E
 
     match command {
         Sub::Note => {
-            let note_path = alternate_path(config.note.folder_path);
+            let note_path = alternate_path(config.general.note_folder_path);
             Ok(note_path)
         }
         Sub::Journal => {
-            let journal_path = alternate_path(config.journal.folder_path);
+            let journal_path = alternate_path(config.general.journal_folder_path);
             Ok(journal_path)
         }
     }

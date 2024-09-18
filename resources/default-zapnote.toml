@@ -3,9 +3,5 @@
 [general]
 template_folder_path = "~/Notes/templates"
 editor = ""                                # if this is not set it will use $EDITOR or vi.
-
-[note]
-folder_path = "~/Notes/"
-
-[journal]
-folder_path = "~/Notes/journal"
+note_folder_path = "~/Notes"
+journal_folder_path = "~/Notes/journal"
