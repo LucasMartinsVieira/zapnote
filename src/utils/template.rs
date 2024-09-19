@@ -2,7 +2,7 @@ use std::{collections::HashMap, env, fs, path::PathBuf, process};
 
 use crate::{
     config::{Config, Sub},
-    utils::alternate_path,
+    utils::{alternate_path, current_date_formatted},
 };
 
 use super::{command_folder_path, run_editor};
@@ -12,6 +12,93 @@ pub fn template_folder_path() -> Result<String, Box<dyn std::error::Error>> {
     let config = Config::read()?;
     let template_path = alternate_path(config.general.template_folder_path);
     Ok(template_path)
+}
+
+fn specific_template(sub: Sub) -> Option<Vec<HashMap<String, String>>> {
+    let config = Config::read().ok()?;
+    let mut output = Vec::new();
+
+    match sub {
+        // TODO: Add specific templates for regular notes.
+        Sub::Note => todo!(),
+        Sub::Journal => {
+            if let Some(journal_entries) = config.journal {
+                journal_entries.iter().for_each(|entry| {
+                    let mut entry_map = HashMap::new();
+
+                    entry_map.insert("name".to_string(), entry.name.to_string());
+                    entry_map.insert("format".to_string(), entry.format.to_string());
+                    entry_map.insert("template".to_string(), entry.template.to_string());
+                    entry_map.insert("folder_path".to_string(), entry.folder_path.to_string());
+
+                    if let Some(alias) = &entry.alias {
+                        if !alias.is_empty() {
+                            entry_map.insert("alias".to_string(), alias.to_string());
+                        }
+                    }
+
+                    output.push(entry_map)
+                })
+            } else {
+                eprintln!("No templates found in configuration file");
+                process::exit(1);
+            }
+        }
+    }
+
+    Some(output)
+}
+
+pub fn specific_template_info(sub: Sub, name: &str) -> Option<HashMap<String, String>> {
+    let mut template_info = HashMap::new();
+
+    match sub {
+        Sub::Note => todo!(),
+        Sub::Journal => {
+            if let Some(entries) = specific_template(Sub::Journal) {
+                // Flag to track if the name was found
+                let mut found = false;
+
+                entries.iter().enumerate().for_each(|(_index, entry)| {
+                    // Use the get method to get the value of the name key
+                    if let Some(name_value) = entry.get("name") {
+                        // Check if the name matches
+                        if name_value == name {
+                            found = true;
+
+                            // Access other values in the HashMap
+                            if let Some(format_value) = entry.get("format") {
+                                template_info.insert(
+                                    "format".to_string(),
+                                    current_date_formatted(format_value),
+                                );
+                            }
+                            if let Some(template_value) = entry.get("template") {
+                                template_info
+                                    .insert("template".to_string(), template_value.to_string());
+                            }
+                            if let Some(folder_path_value) = entry.get("folder_path") {
+                                template_info.insert(
+                                    "folder_path".to_string(),
+                                    folder_path_value.to_string(),
+                                );
+                            }
+
+                            if let Some(alias_value) = entry.get("alias") {
+                                template_info.insert("alias".to_string(), alias_value.to_string());
+                            }
+                        }
+                    }
+                });
+
+                if !found {
+                    eprintln!("No entry found for the name '{}'", name);
+                    process::exit(1);
+                }
+            }
+            Some(template_info)
+        }
+    }
 }
 
 pub fn templates_in_folder(path: String) -> Option<Vec<String>> {

@@ -1,4 +1,5 @@
 use crate::config::{Config, Sub};
+use chrono::Local;
 use directories::BaseDirs;
 use nix::unistd::execvp;
 use std::{ffi::CString, fs, process};
@@ -61,6 +62,14 @@ fn alternate_path(path: String) -> String {
     }
 
     path
+}
+
+pub fn current_date_formatted(format: &str) -> String {
+    let current_date = Local::now();
+
+    let date_formatted = current_date.format(format);
+
+    date_formatted.to_string()
 }
 
 #[cfg(test)]
