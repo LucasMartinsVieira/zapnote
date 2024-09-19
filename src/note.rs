@@ -1,6 +1,9 @@
 use crate::{
     config::Sub,
-    utils::{check_note_name, check_template, insert_template_into_file},
+    utils::{
+        check_note_name,
+        template::{check_template, insert_template_into_file},
+    },
 };
 
 pub fn handle_note_command(template: &str, name: &str) {
