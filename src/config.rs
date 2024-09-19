@@ -14,6 +14,7 @@ use std::{
 #[derive(Deserialize)]
 pub struct Config {
     pub general: GeneralConfig,
+    pub journal: Option<Vec<JournalConfig>>,
 }
 
 #[derive(Deserialize)]
@@ -22,6 +23,15 @@ pub struct GeneralConfig {
     pub editor: Option<String>,
     pub note_folder_path: String,
     pub journal_folder_path: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct JournalConfig {
+    pub name: String,
+    pub format: String,
+    pub template: String,
+    pub folder_path: String,
+    pub alias: Option<String>,
 }
 
 pub enum Sub {

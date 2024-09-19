@@ -18,5 +18,5 @@ pub enum SubCommand {
     Note { template: String, name: String },
     /// Create a journal note
     #[command(alias = "j")]
-    Journal,
+    Journal { name: String },
 }

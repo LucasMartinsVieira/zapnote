@@ -2,6 +2,14 @@
 
 [general]
 template_folder_path = "~/Notes/templates"
-editor = ""                                # if this is not set it will use $EDITOR or vi.
+editor = ""                                # if unset, uses $EDITOR or vi.
 note_folder_path = "~/Notes"
 journal_folder_path = "~/Notes/journal"
+
+# Example of a journal entry
+[[journal]]
+name = "day"          # Usage: `zn journal day` to run the program
+format = "%Y-%m-%d"   # Reference: https://docs.rs/chrono/latest/chrono/format/strftime/index.html#specifiers, e.g., "2024-09-19"
+template = "daily"    # Relative to general.template_folder_path, e.g., ~/Notes/journal/templates/daily
+folder_path = "daily" # Relative to general.jounal_folder_path, e.g., ~/Notes/journal/daily
+alias = ""            # Optional, shortcut (e.g., "d" for "daily").

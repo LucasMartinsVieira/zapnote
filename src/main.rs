@@ -1,4 +1,5 @@
 use crate::cli::{Cli, SubCommand};
+use crate::journal::*;
 use crate::note::*;
 use clap::Parser;
 use config::Config;
@@ -7,6 +8,7 @@ use std::env;
 mod cli;
 mod config;
 mod errors;
+mod journal;
 mod note;
 mod utils;
 
@@ -25,8 +27,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         SubCommand::Note { template, name } => {
             handle_note_command(template, name);
         }
-        SubCommand::Journal => {
-            todo!()
+        SubCommand::Journal { name } => {
+            handle_journal_commmand(name);
         }
     }
 
