@@ -3,7 +3,7 @@
     <p>Lightning-fast template-based note generator</p>
 </div>
 
-<img src="./resources/zapnote.webp"></img>
+<img src="./.github/zapnote.webp"></img>
 
 ## About
 
