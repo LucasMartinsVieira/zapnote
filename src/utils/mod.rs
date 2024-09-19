@@ -45,11 +45,7 @@ pub fn templates_in_folder(path: String) -> Option<Vec<String>> {
     Some(dir_contents)
 }
 
-pub fn check_template(
-    template: &str,
-    command: Sub,
-    name: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub fn check_template(template: &str) -> Result<(), Box<dyn std::error::Error>> {
     let path = template_folder_path()?;
     let templates_vec = templates_in_folder(path);
 
@@ -74,7 +70,10 @@ pub fn check_template(
             process::exit(1)
         }
     }
+    Ok(())
+}
 
+pub fn check_note_name(name: &str, command: Sub) -> Result<(), Box<dyn std::error::Error>> {
     // Check if there's already a note with the same name specified by the user on the folder path
     let path = command_folder_path(command)?;
 
