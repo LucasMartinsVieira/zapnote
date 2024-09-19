@@ -31,7 +31,6 @@ pub struct JournalConfig {
     pub format: String,
     pub template: String,
     pub folder_path: String,
-    pub alias: Option<String>,
 }
 
 pub enum Sub {

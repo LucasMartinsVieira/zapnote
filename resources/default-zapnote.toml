@@ -12,4 +12,3 @@ name = "day"          # Usage: `zn journal day` to run the program
 format = "%Y-%m-%d"   # Reference: https://docs.rs/chrono/latest/chrono/format/strftime/index.html#specifiers, e.g., "2024-09-19"
 template = "daily"    # Relative to general.template_folder_path, e.g., ~/Notes/journal/templates/daily
 folder_path = "daily" # Relative to general.jounal_folder_path, e.g., ~/Notes/journal/daily
-alias = ""            # Optional, shortcut (e.g., "d" for "daily").

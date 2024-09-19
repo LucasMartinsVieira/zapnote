@@ -31,12 +31,6 @@ fn specific_template(sub: Sub) -> Option<Vec<HashMap<String, String>>> {
                     entry_map.insert("template".to_string(), entry.template.to_string());
                     entry_map.insert("folder_path".to_string(), entry.folder_path.to_string());
 
-                    if let Some(alias) = &entry.alias {
-                        if !alias.is_empty() {
-                            entry_map.insert("alias".to_string(), alias.to_string());
-                        }
-                    }
-
                     output.push(entry_map)
                 })
             } else {
@@ -82,10 +76,6 @@ pub fn specific_template_info(sub: Sub, name: &str) -> Option<HashMap<String, St
                                     "folder_path".to_string(),
                                     folder_path_value.to_string(),
                                 );
-                            }
-
-                            if let Some(alias_value) = entry.get("alias") {
-                                template_info.insert("alias".to_string(), alias_value.to_string());
                             }
                         }
                     }
