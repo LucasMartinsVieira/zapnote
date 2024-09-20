@@ -195,6 +195,55 @@ pub fn insert_template_into_file(
     Ok(())
 }
 
+pub fn insert_template_journal(
+    template_hashmap: HashMap<String, String>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    // TODO: Do better error handling
+    let format = template_hashmap.get("format").unwrap();
+    let template = template_hashmap.get("template").unwrap();
+    let folder_path = template_hashmap.get("folder_path").unwrap();
+
+    let command_path_str = command_folder_path(Sub::Journal).unwrap();
+    let full_path = format!("{command_path_str}/{folder_path}/{format}.md");
+
+    let command_path_buf = PathBuf::from(full_path);
+    let path = command_path_buf.to_str().unwrap();
+
+    let template_file_contents = template_file_contents(template.to_string());
+
+    if let Some(contents) = template_file_contents {
+        // TODO: if the directory doesn't exist, create it
+        if let Err(err) = fs::write(path, contents) {
+            eprintln!("error writing template into file: {:?}", err);
+            process::exit(1)
+        }
+    }
+
+    let no_editor = env::var("ZAPNOTE_NO_EDITOR")?;
+    let parsed_no_editor: bool = no_editor.parse().unwrap_or(false);
+
+    // If the flag --no-editor is passed by user, the program exist with status code 0, before
+    // running the run_editor function.
+    if parsed_no_editor {
+        process::exit(0);
+    }
+
+    let config = Config::read()?;
+    let default_editor = config.general.editor;
+
+    match default_editor.as_deref() {
+        Some("") | None => {
+            let editor = env::var("EDITOR").unwrap_or("vi".to_string());
+            run_editor(&editor, path);
+        }
+        Some(editor) => {
+            run_editor(editor, path);
+        }
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
