@@ -1,5 +1,5 @@
 use crate::config::{Config, Sub};
-use chrono::Local;
+use chrono::{Datelike, Local};
 use directories::BaseDirs;
 use nix::unistd::execvp;
 use std::{ffi::CString, fs, process};
@@ -64,10 +64,31 @@ fn alternate_path(path: String) -> String {
     path
 }
 
+fn quarter_from_week(week: u32) -> u32 {
+    match week {
+        1..=13 => 1,
+        14..=26 => 2,
+        27..=39 => 3,
+        40..=53 => 4,
+        _ => unreachable!(),
+    }
+}
+
+// Function to add support for %Q (year quarter) not available on chrono crate.
+fn process_format_string(format: &str) -> String {
+    let week_number = Local::now().naive_local().iso_week().week();
+    let quarter = quarter_from_week(week_number);
+
+    format.replace("%Q", &quarter.to_string())
+}
+
+// TODO: Test this function
 pub fn current_date_formatted(format: &str) -> String {
     let current_date = Local::now();
 
-    let date_formatted = current_date.format(format);
+    let formatted = process_format_string(format);
+
+    let date_formatted = current_date.format(&formatted);
 
     date_formatted.to_string()
 }

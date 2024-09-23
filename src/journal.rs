@@ -9,8 +9,6 @@ pub fn handle_journal_commmand(name: &str) {
     if let Some(template) = template_hashmap.get("template") {
         check_template(template).unwrap();
     }
-    // let template = template_hashmap.get("template").unwrap();
-    // check_template(template).unwrap();
 
     // TODO: If file already exists, don't override it.
     insert_template_journal(template_hashmap).unwrap();

@@ -2,10 +2,10 @@ use std::{collections::HashMap, env, fs, path::PathBuf, process};
 
 use crate::{
     config::{Config, Sub},
-    utils::{alternate_path, current_date_formatted},
+    utils::alternate_path,
 };
 
-use super::{command_folder_path, run_editor};
+use super::{command_folder_path, current_date_formatted, run_editor};
 
 pub fn template_folder_path() -> Result<String, Box<dyn std::error::Error>> {
     // TODO: Refactor this for testing purposes?
@@ -62,10 +62,8 @@ pub fn specific_template_info(sub: Sub, name: &str) -> Option<HashMap<String, St
 
                             // Access other values in the HashMap
                             if let Some(format_value) = entry.get("format") {
-                                template_info.insert(
-                                    "format".to_string(),
-                                    current_date_formatted(format_value),
-                                );
+                                template_info
+                                    .insert("format".to_string(), format_value.to_string());
                             }
                             if let Some(template_value) = entry.get("template") {
                                 template_info
@@ -150,6 +148,8 @@ pub fn template_file_contents(template: String) -> Option<String> {
     }
 }
 
+// TODO: Do a function for inserting the template into the file, being a specific template from the
+// config file or not
 pub fn insert_template_into_file(
     template: String,
     name: String,
@@ -203,8 +203,9 @@ pub fn insert_template_journal(
     let template = template_hashmap.get("template").unwrap();
     let folder_path = template_hashmap.get("folder_path").unwrap();
 
+    let date_formatted = current_date_formatted(format);
     let command_path_str = command_folder_path(Sub::Journal).unwrap();
-    let full_path = format!("{command_path_str}/{folder_path}/{format}.md");
+    let full_path = format!("{command_path_str}/{folder_path}/{date_formatted}.md");
 
     let command_path_buf = PathBuf::from(full_path);
     let path = command_path_buf.to_str().unwrap();
