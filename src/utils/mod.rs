@@ -1,8 +1,11 @@
-use crate::config::{Config, Sub};
+use crate::{
+    config::{Config, Sub},
+    utils::template::specific_template_info,
+};
 use chrono::{Datelike, Local};
 use directories::BaseDirs;
 use nix::unistd::execvp;
-use std::{ffi::CString, fs, process};
+use std::{ffi::CString, fs, path::Path, process};
 
 pub mod template;
 
@@ -21,20 +24,49 @@ pub fn command_folder_path(command: Sub) -> Result<String, Box<dyn std::error::E
     }
 }
 
+// TODO: Make this return a boolean to be used in the insert_template_function so the program can
+// be used not only to create but to access notes as well?
 pub fn check_note_name(name: &str, command: Sub) -> Result<(), Box<dyn std::error::Error>> {
     // Check if there's already a note with the same name specified by the user on the folder path
-    let path = command_folder_path(command)?;
+    match command {
+        Sub::Note => {
+            let path = command_folder_path(command)?;
 
-    let dir_contents: Vec<String> = fs::read_dir(path)?
-        .filter_map(|entry| entry.ok())
-        .filter_map(|entry| entry.file_name().into_string().ok())
-        .filter(|name| name.ends_with(".md"))
-        .map(|name| name.trim_end_matches(".md").to_string())
-        .collect();
+            let dir_contents: Vec<String> = fs::read_dir(path)?
+                .filter_map(|entry| entry.ok())
+                .filter_map(|entry| entry.file_name().into_string().ok())
+                .filter(|name| name.ends_with(".md"))
+                .map(|name| name.trim_end_matches(".md").to_string())
+                .collect();
 
-    if dir_contents.contains(&name.to_owned()) {
-        eprintln!("There is already a note with the name: '{}'", &name);
-        process::exit(1)
+            if dir_contents.contains(&name.to_owned()) {
+                eprintln!("There is already a note with the name: '{}'", &name);
+                process::exit(1)
+            }
+        }
+        Sub::Journal => {
+            let hashmap_info = specific_template_info(Sub::Journal, name).unwrap();
+
+            let folder_path = match hashmap_info.get("folder_path") {
+                Some(folder_path_value) => {
+                    let command_path = command_folder_path(command)?;
+                    format!("{}/{}", command_path, folder_path_value)
+                }
+                None => todo!(),
+            };
+
+            let journal_entry = match hashmap_info.get("format") {
+                Some(format_value) => current_date_formatted(format_value),
+                None => todo!(),
+            };
+
+            let full_path = format!("{}/{}.md", folder_path, journal_entry);
+
+            if Path::new(&full_path).is_file() {
+                eprintln!("There is already a note with the path: '{}'", &full_path);
+                process::exit(1)
+            }
+        }
     }
 
     Ok(())
