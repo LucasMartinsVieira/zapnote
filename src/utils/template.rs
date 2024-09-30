@@ -1,4 +1,9 @@
-use std::{collections::HashMap, env, fs, path::PathBuf, process};
+use std::{
+    collections::HashMap,
+    env, fs,
+    path::{Path, PathBuf},
+    process,
+};
 
 use crate::{
     config::{Config, Sub},
@@ -164,6 +169,13 @@ pub fn insert_template_into_file(
     let template_file_contents = template_file_contents(template);
 
     if let Some(contents) = template_file_contents {
+        if let Some(parent) = Path::new(&path).parent() {
+            if let Err(err) = fs::create_dir_all(parent) {
+                eprintln!("error creating directories: {:?}", err);
+                process::exit(1);
+            }
+        }
+
         if let Err(err) = fs::write(path, contents) {
             eprintln!("error writing template into file: {:?}", err);
             process::exit(1)
@@ -213,7 +225,13 @@ pub fn insert_template_journal(
     let template_file_contents = template_file_contents(template.to_string());
 
     if let Some(contents) = template_file_contents {
-        // TODO: if the directory doesn't exist, create it
+        if let Some(parent) = Path::new(&path).parent() {
+            if let Err(err) = fs::create_dir_all(parent) {
+                eprintln!("error creating directories: {:?}", err);
+                process::exit(1);
+            }
+        }
+
         if let Err(err) = fs::write(path, contents) {
             eprintln!("error writing template into file: {:?}", err);
             process::exit(1)
