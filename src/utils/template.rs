@@ -153,20 +153,23 @@ pub fn template_file_contents(template: String) -> Option<String> {
     }
 }
 
-// TODO: Do a function for inserting the template into the file, being a specific template from the
-// config file or not
-pub fn insert_template_into_file(
+pub fn write_template_to_file(
+    full_path: String,
     template: String,
-    name: String,
-    command: Sub,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let command_path_str = command_folder_path(command)?;
-    let full_path = format!("{command_path_str}/{name}.md");
+    println!("write_template_to_file args");
+    println!("{:?}", full_path);
+    println!("{:?}", template);
 
-    let command_path_buf = PathBuf::from(full_path);
+    let command_path_buf = PathBuf::from(&full_path);
     let path = command_path_buf.to_str().unwrap();
 
-    let template_file_contents = template_file_contents(template);
+    let template_file_contents = template_file_contents(template.to_string());
+
+    println!("write_template_to_file variables");
+    println!("{:?}", command_path_buf);
+    println!("{:?}", path);
+    //println!("{:?}", template_file_contents);
 
     if let Some(contents) = template_file_contents {
         if let Some(parent) = Path::new(&path).parent() {
@@ -207,6 +210,23 @@ pub fn insert_template_into_file(
     Ok(())
 }
 
+// TODO: Do a function for inserting the template into the file, being a specific template from the
+// config file or not
+pub fn insert_template_to_file(
+    template: String,
+    name: String,
+    command: Sub,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let command_path_str = command_folder_path(command)?;
+    let full_path = format!("{command_path_str}/{name}.md");
+
+    println!("insert_template_to_file");
+    println!("{}", command_path_str);
+    println!("{}", full_path);
+
+    write_template_to_file(full_path, template)
+}
+
 pub fn insert_template_journal(
     template_hashmap: HashMap<String, String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -219,48 +239,7 @@ pub fn insert_template_journal(
     let command_path_str = command_folder_path(Sub::Journal).unwrap();
     let full_path = format!("{command_path_str}/{folder_path}/{date_formatted}.md");
 
-    let command_path_buf = PathBuf::from(full_path);
-    let path = command_path_buf.to_str().unwrap();
-
-    let template_file_contents = template_file_contents(template.to_string());
-
-    if let Some(contents) = template_file_contents {
-        if let Some(parent) = Path::new(&path).parent() {
-            if let Err(err) = fs::create_dir_all(parent) {
-                eprintln!("error creating directories: {:?}", err);
-                process::exit(1);
-            }
-        }
-
-        if let Err(err) = fs::write(path, contents) {
-            eprintln!("error writing template into file: {:?}", err);
-            process::exit(1)
-        }
-    }
-
-    let no_editor = env::var("ZAPNOTE_NO_EDITOR")?;
-    let parsed_no_editor: bool = no_editor.parse().unwrap_or(false);
-
-    // If the flag --no-editor is passed by user, the program exist with status code 0, before
-    // running the run_editor function.
-    if parsed_no_editor {
-        process::exit(0);
-    }
-
-    let config = Config::read()?;
-    let default_editor = config.general.editor;
-
-    match default_editor.as_deref() {
-        Some("") | None => {
-            let editor = env::var("EDITOR").unwrap_or("vi".to_string());
-            run_editor(&editor, path);
-        }
-        Some(editor) => {
-            run_editor(editor, path);
-        }
-    }
-
-    Ok(())
+    write_template_to_file(full_path, template.to_owned())
 }
 
 #[cfg(test)]

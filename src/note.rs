@@ -2,7 +2,7 @@ use crate::{
     config::Sub,
     utils::{
         check_note_name,
-        template::{check_template, insert_template_into_file},
+        template::{check_template, insert_template_to_file},
     },
 };
 
@@ -14,5 +14,5 @@ pub fn handle_note_command(template: &str, name: &str) {
 
     check_note_name(name, Sub::Note).unwrap();
 
-    insert_template_into_file(template.to_owned(), name.to_owned(), Sub::Note).unwrap();
+    insert_template_to_file(template.to_owned(), name.to_owned(), Sub::Note).unwrap();
 }
