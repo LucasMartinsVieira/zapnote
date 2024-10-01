@@ -32,6 +32,11 @@ pub fn check_note_name(name: &str, command: Sub) -> Result<(), Box<dyn std::erro
         Sub::Note => {
             let path = command_folder_path(command)?;
 
+            if let Err(err) = fs::create_dir_all(&path) {
+                eprintln!("error creating directories: {:?}", err);
+                process::exit(1);
+            }
+
             let dir_contents: Vec<String> = fs::read_dir(path)?
                 .filter_map(|entry| entry.ok())
                 .filter_map(|entry| entry.file_name().into_string().ok())
