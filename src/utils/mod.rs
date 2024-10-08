@@ -171,4 +171,28 @@ mod tests {
             assert_eq!(result, expected_quarter, "Failed on week: {}", week)
         }
     }
+
+    #[test]
+    fn test_process_format_string() {
+        let test_cases = [
+            (1, "Q1"),
+            (13, "Q1"),
+            (14, "Q2"),
+            (26, "Q2"),
+            (27, "Q3"),
+            (39, "Q3"),
+            (40, "Q4"),
+            (53, "Q4"),
+        ];
+
+        for (week, expected_quarter) in test_cases {
+            // This format outputs the quarter as "Q1", "Q2", "Q3", or "Q4" based on the week number.
+            let format = "Q%Q".to_string();
+
+            let result =
+                process_format_string(&format.replace("%Q", &quarter_from_week(week).to_string()));
+
+            assert_eq!(result, expected_quarter, "Failed on week: {}", result);
+        }
+    }
 }
