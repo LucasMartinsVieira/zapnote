@@ -146,4 +146,29 @@ mod tests {
 
         assert_eq!("/foo/bar", alternate_path("/foo/bar".to_owned()));
     }
+
+    #[test]
+    fn test_quarter_from_week() {
+        let test_cases = [
+            (1, 1),
+            (5, 1),
+            (13, 1),
+            (14, 2),
+            (20, 2),
+            (26, 2),
+            (27, 3),
+            (33, 3),
+            (39, 3),
+            (40, 4),
+            (46, 4),
+            (52, 4),
+            (53, 4),
+        ];
+
+        for (week, expected_quarter) in test_cases {
+            let result = quarter_from_week(week);
+
+            assert_eq!(result, expected_quarter, "Failed on week: {}", week)
+        }
+    }
 }
