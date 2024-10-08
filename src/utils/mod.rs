@@ -195,4 +195,19 @@ mod tests {
             assert_eq!(result, expected_quarter, "Failed on week: {}", result);
         }
     }
+
+    #[test]
+    fn test_current_date_formatted() {
+        let format_str = "%Y-%m-%d Q%Q";
+        let result = current_date_formatted(format_str);
+
+        // Ensure that %Q has been replaced with the appropriate quarter number
+        // based on the current week number.
+        assert!(
+            result.contains("Q1")
+                || result.contains("Q2")
+                || result.contains("Q3")
+                || result.contains("Q4")
+        );
+    }
 }
