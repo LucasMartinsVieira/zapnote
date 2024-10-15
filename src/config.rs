@@ -62,11 +62,11 @@ impl Config {
 
         if let Some(parent) = default_parent {
             if let Err(err) = fs::create_dir_all(parent) {
-                println!("error creating config directory: {:?}", err);
+                eprintln!("error creating config directory: {:?}", err);
                 return Some(default_path);
             }
         } else {
-            println!("default parent directory not found.");
+            eprintln!("default parent directory not found.");
         }
 
         // Creates config file if doesn't exist.
@@ -86,8 +86,8 @@ impl Config {
                         process::exit(0);
                     }
                     Err(err) => {
-                        println!("default configuration file not found");
-                        println!("error writting default config file {:?}", err)
+                        eprintln!("default configuration file not found");
+                        eprintln!("error writting default config file {:?}", err)
                     }
                 }
             }

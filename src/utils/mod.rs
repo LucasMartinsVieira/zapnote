@@ -68,6 +68,7 @@ pub fn check_note_name(name: &str, command: Sub) -> Result<(), Box<dyn std::erro
             let full_path = format!("{}/{}.md", folder_path, journal_entry);
 
             if Path::new(&full_path).is_file() {
+                // BUG: Make this return the correct path, and not a path with two slashes.
                 eprintln!("There is already a note with the path: '{}'", &full_path);
                 process::exit(1)
             }
