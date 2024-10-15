@@ -58,7 +58,7 @@ pub fn specific_template_info(sub: Sub, name: &str) -> Option<HashMap<String, St
                 // Flag to track if the name was found
                 let mut found = false;
 
-                entries.iter().enumerate().for_each(|(_index, entry)| {
+                entries.iter().for_each(|entry| {
                     // Use the get method to get the value of the name key
                     if let Some(name_value) = entry.get("name") {
                         // Check if the name matches
@@ -157,19 +157,10 @@ pub fn write_template_to_file(
     full_path: String,
     template: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    println!("write_template_to_file args");
-    println!("{:?}", full_path);
-    println!("{:?}", template);
-
     let command_path_buf = PathBuf::from(&full_path);
     let path = command_path_buf.to_str().unwrap();
 
     let template_file_contents = template_file_contents(template.to_string());
-
-    println!("write_template_to_file variables");
-    println!("{:?}", command_path_buf);
-    println!("{:?}", path);
-    //println!("{:?}", template_file_contents);
 
     if let Some(contents) = template_file_contents {
         if let Some(parent) = Path::new(&path).parent() {
@@ -219,10 +210,6 @@ pub fn insert_template_to_file(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let command_path_str = command_folder_path(command)?;
     let full_path = format!("{command_path_str}/{name}.md");
-
-    println!("insert_template_to_file");
-    println!("{}", command_path_str);
-    println!("{}", full_path);
 
     write_template_to_file(full_path, template)
 }
