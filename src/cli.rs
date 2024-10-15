@@ -15,8 +15,15 @@ pub struct Cli {
 pub enum SubCommand {
     /// Create a regular note
     #[command(alias = "n")]
-    Note { template: String, name: String },
+    Note(NoteArgs),
+    //Note { template: String, name: String },
     /// Create a journal note
     #[command(alias = "j")]
     Journal { name: String },
+}
+
+#[derive(Parser)]
+pub struct NoteArgs {
+    pub template: String,
+    pub name: Vec<String>,
 }

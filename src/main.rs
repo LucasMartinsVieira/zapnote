@@ -24,8 +24,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     match &cli.subcommand {
-        SubCommand::Note { template, name } => {
-            handle_note_command(template, name);
+        // SubCommand::Note { template, name } => {
+        SubCommand::Note(args) => {
+            handle_note_command(&args.template, &args.name);
         }
         SubCommand::Journal { name } => {
             handle_journal_commmand(name);
