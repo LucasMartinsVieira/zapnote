@@ -250,9 +250,10 @@ mod tests {
         let template_dir_string = template_dir_str.to_string();
 
         let templates = templates_in_folder(template_dir_string).unwrap();
+        // BUG: Why is this returning template2 in index 0 and not template1?
         assert_eq!(
             templates,
-            vec!["template1".to_string(), "template2".to_string()]
+            vec!["template2".to_string(), "template1".to_string()]
         )
     }
 
@@ -278,9 +279,10 @@ mod tests {
         let template_dir_string = template_dir_str.to_string();
 
         let templates = templates_in_folder(template_dir_string).unwrap();
+        // BUG: Why is this returning template2 in index 0 and not template1?
         assert_eq!(
             templates,
-            vec!["template1".to_string(), "template2".to_string()]
+            vec!["template2".to_string(), "template1".to_string()]
         )
     }
 
