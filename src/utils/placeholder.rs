@@ -1,10 +1,10 @@
 use std::env;
 
 use chrono::Local;
+use regex::Regex;
 
 pub struct Placeholder;
 
-// TODO: Make this functions work with more than just "{{something}}"
 impl Placeholder {
     pub fn parse(mut template: String) -> String {
         Self::parse_title(&mut template);
@@ -22,14 +22,26 @@ impl Placeholder {
     }
 
     fn parse_time(template: &mut String) {
-        let local_time = Local::now().format("%H:%M").to_string();
+        let regex = Regex::new(r"\{\{time(:([^{}]+))?\}\}").unwrap();
 
-        *template = template.replace("{{time}}", &local_time)
+        *template = regex
+            .replace_all(template, |caps: &regex::Captures| {
+                let format = caps.get(2).map_or("%H:%M", |m| m.as_str());
+                let local_time = Local::now().format(format).to_string();
+                local_time
+            })
+            .to_string();
     }
 
     fn parse_date(template: &mut String) {
-        let local_date = Local::now().format("%Y-%m-%d").to_string();
+        let regex = Regex::new(r"\{\{date(:([^{}]+))?\}\}").unwrap();
 
-        *template = template.replace("{{date}}", &local_date)
+        *template = regex
+            .replace_all(template, |caps: &regex::Captures| {
+                let format = caps.get(2).map_or("%Y-%m-%d", |m| m.as_str());
+                let local_date = Local::now().format(format).to_string();
+                local_date
+            })
+            .to_string();
     }
 }
