@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     config::{Config, Sub},
-    utils::alternate_path,
+    utils::{alternate_path, placeholder::Placeholder},
 };
 
 use super::{command_folder_path, current_date_formatted, run_editor};
@@ -146,8 +146,9 @@ pub fn template_file_contents(template: String) -> Option<String> {
         template_file_path.push(&template_name_with_extension);
 
         let template_file_contents = fs::read_to_string(template_file_path).ok()?;
+        let parsed_template_file_contents = Placeholder::parse(template_file_contents);
 
-        Some(template_file_contents)
+        Some(parsed_template_file_contents)
     } else {
         None
     }

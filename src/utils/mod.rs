@@ -7,6 +7,7 @@ use directories::BaseDirs;
 use nix::unistd::execvp;
 use std::{ffi::CString, fs, path::Path, process};
 
+pub mod placeholder;
 pub mod template;
 
 pub fn command_folder_path(command: Sub) -> Result<String, Box<dyn std::error::Error>> {

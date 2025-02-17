@@ -26,6 +26,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match &cli.subcommand {
         // SubCommand::Note { template, name } => {
         SubCommand::Note(args) => {
+            // TODO: Substitute this
+            env::set_var("ZAPNOTE_NOTE_TITLE", args.name.join(" "));
             handle_note_command(&args.template, &args.name);
         }
         SubCommand::Journal { name } => {
