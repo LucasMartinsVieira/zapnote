@@ -20,6 +20,17 @@ pub struct GeneralConfig {
     pub editor: Option<String>,
     pub note_folder_path: String,
     pub journal_folder_path: String,
+    pub note_case_style: Option<CaseStyle>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum CaseStyle {
+    Camel,
+    Kebab,
+    Pascal,
+    Snake,
+    Original,
 }
 
 #[derive(Debug, Deserialize)]

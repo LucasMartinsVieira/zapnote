@@ -5,6 +5,7 @@ template_folder_path = "~/Notes/templates"
 editor = ""                                # if unset, uses $EDITOR or vi.
 note_folder_path = "~/Notes"
 journal_folder_path = "~/Notes/journal"
+note_case_style = "original"               # Accepted values are: camel, kebab, pascal, snake or original,
 
 # Example of a journal entry
 [[journal]]

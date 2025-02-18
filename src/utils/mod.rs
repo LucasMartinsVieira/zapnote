@@ -7,6 +7,7 @@ use directories::BaseDirs;
 use nix::unistd::execvp;
 use std::{ffi::CString, fs, path::Path, process};
 
+pub mod casing;
 pub mod placeholder;
 pub mod template;
 

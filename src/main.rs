@@ -4,6 +4,7 @@ use crate::note::*;
 use clap::Parser;
 use config::Config;
 use std::env;
+use utils::casing::convert_case;
 
 mod cli;
 mod config;
@@ -27,8 +28,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // SubCommand::Note { template, name } => {
         SubCommand::Note(args) => {
             // TODO: Substitute this
-            env::set_var("ZAPNOTE_NOTE_TITLE", args.name.join(" "));
-            handle_note_command(&args.template, &args.name);
+            let note_name = args.name.join(" ");
+            let case_converted_title = convert_case(note_name);
+
+            env::set_var("ZAPNOTE_NOTE_TITLE", &case_converted_title);
+
+            handle_note_command(&args.template, case_converted_title);
         }
         SubCommand::Journal { name } => {
             handle_journal_commmand(name);
