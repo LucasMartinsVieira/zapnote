@@ -104,7 +104,7 @@ fn alternate_path(path: String) -> String {
     path
 }
 
-fn quarter_from_week(week: u32) -> u32 {
+pub fn quarter_from_week(week: u32) -> u32 {
     match week {
         1..=13 => 1,
         14..=26 => 2,

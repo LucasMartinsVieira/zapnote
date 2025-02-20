@@ -1,7 +1,9 @@
 use std::env;
 
-use chrono::Local;
+use chrono::{Datelike, Local};
 use regex::Regex;
+
+use crate::utils::quarter_from_week;
 
 pub struct Placeholder;
 
@@ -14,14 +16,12 @@ impl Placeholder {
 
         Self::parse_placeholder(&mut template, time_regex_pattern, |caps| {
             let format = caps.get(2).map_or("%H:%M", |m| m.as_str());
-            let local_time = Local::now().format(format).to_string();
-            local_time
+            Self::format_with_quarter(format)
         });
 
         Self::parse_placeholder(&mut template, date_regex_pattern, |caps| {
             let format = caps.get(2).map_or("%Y-%m-%d", |m| m.as_str());
-            let local_date = Local::now().format(format).to_string();
-            local_date
+            Self::format_with_quarter(format)
         });
 
         template
@@ -43,5 +43,14 @@ impl Placeholder {
         *template = regex
             .replace_all(template, |caps: &regex::Captures| replacement_fn(caps))
             .to_string();
+    }
+
+    fn format_with_quarter(format: &str) -> String {
+        let now = Local::now();
+        let quarter = quarter_from_week(now.iso_week().week());
+
+        let formatted_date = format.replace("%Q", &quarter.to_string());
+
+        now.format(&formatted_date).to_string()
     }
 }
