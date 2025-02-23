@@ -11,14 +11,22 @@
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, naersk }:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+      naersk,
+    }:
 
-    flake-utils.lib.eachDefaultSystem (system:
+    flake-utils.lib.eachDefaultSystem (
+      system:
       let
         pkgs = import nixpkgs { inherit system; };
 
         naersk' = pkgs.callPackage naersk { };
-      in {
+      in
+      {
         # For `nix develop`:
         devShell = pkgs.mkShell {
           buildInputs = with pkgs; [
@@ -27,7 +35,7 @@
             cargo-msrv
             clippy
             just
-            nixfmt
+            nixfmt-rfc-style
             rust-analyzer
             rustc
             rustfmt
@@ -52,5 +60,6 @@
             };
           };
         };
-      });
+      }
+    );
 }
