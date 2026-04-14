@@ -6,22 +6,20 @@
 test:
   cargo test
 
-# Format all Rust and Nix code.
+# Format all Rust code.
 fmt:
   cargo fmt --all
-  nixfmt -- *.nix
 
 # Run all the "lint" recipes
 lint-all:
   @just lint
   @just msrv
 
-# Lint and verify code with formatting, Clippy checks, and Nix file syntax.
+# Lint and verify code with formatting and Clippy checks. 
 lint:
   cargo check
   cargo fmt --all --check
   cargo clippy --all-features --all-targets -- -Dwarnings
-  nixfmt --check -- *.nix
 
 # Checks Minimum Supported Rust Version (MSRV)
 msrv:
