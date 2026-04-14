@@ -81,15 +81,13 @@ pub fn check_note_name(name: &str, command: Sub) -> Result<(), Box<dyn std::erro
 }
 
 fn run_editor(editor: &str, path: &str) {
-    // TODO: Do better error handling
     let editor_cstr = CString::new(editor).expect("CString::new failed editor");
     let path_cstr = CString::new(path).expect("CString::new failed path");
     let args = [editor_cstr.clone(), path_cstr];
 
-    execvp(&editor_cstr, &args).unwrap_or_else(|err| {
-        eprintln!("error executing {}: {}", editor, err);
-        process::exit(1);
-    });
+    let Err(err) = execvp(&editor_cstr, &args);
+    eprintln!("error executing {}: {}", editor, err);
+    process::exit(1);
 }
 
 fn alternate_path(path: String) -> String {

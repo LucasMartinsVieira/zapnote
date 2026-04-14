@@ -21,12 +21,12 @@ pub fn template_folder_path() -> Result<String, Box<dyn std::error::Error>> {
 
 fn specific_template(sub: Sub) -> Option<Vec<HashMap<String, String>>> {
     let config = Config::read().ok()?;
-    let mut output = Vec::new();
 
     match sub {
-        // TODO: Add specific templates for regular notes.
-        Sub::Note => todo!(),
+        Sub::Note => None,
         Sub::Journal => {
+            let mut output = Vec::new();
+
             if let Some(journal_entries) = config.journal {
                 journal_entries.iter().for_each(|entry| {
                     let mut entry_map = HashMap::new();
@@ -42,17 +42,17 @@ fn specific_template(sub: Sub) -> Option<Vec<HashMap<String, String>>> {
                 eprintln!("No templates found in configuration file");
                 process::exit(1);
             }
+
+            Some(output)
         }
     }
-
-    Some(output)
 }
 
 pub fn specific_template_info(sub: Sub, name: &str) -> Option<HashMap<String, String>> {
     let mut template_info = HashMap::new();
 
     match sub {
-        Sub::Note => todo!(),
+        Sub::Note => None,
         Sub::Journal => {
             if let Some(entries) = specific_template(Sub::Journal) {
                 // Flag to track if the name was found
@@ -97,7 +97,7 @@ pub fn specific_template_info(sub: Sub, name: &str) -> Option<HashMap<String, St
 pub fn templates_in_folder(path: String) -> Option<Vec<String>> {
     // Search in template directory for markdown files, put them in a Vec<String> and remove .md
     // from the files name
-    let dir_contents: Vec<String> = fs::read_dir(path)
+    let mut dir_contents: Vec<String> = fs::read_dir(path)
         .ok()?
         .filter_map(|entry| entry.ok())
         .filter_map(|entry| entry.file_name().into_string().ok())
@@ -105,6 +105,7 @@ pub fn templates_in_folder(path: String) -> Option<Vec<String>> {
         .map(|name| name.trim_end_matches(".md").to_string())
         .collect();
 
+    dir_contents.sort();
     Some(dir_contents)
 }
 
@@ -210,7 +211,10 @@ pub fn insert_template_to_file(
     command: Sub,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let command_path_str = command_folder_path(command)?;
-    let full_path = format!("{command_path_str}/{name}.md");
+    let full_path = PathBuf::from(command_path_str)
+        .join(format!("{name}.md"))
+        .to_string_lossy()
+        .into_owned();
 
     write_template_to_file(full_path, template)
 }
@@ -218,14 +222,23 @@ pub fn insert_template_to_file(
 pub fn insert_template_journal(
     template_hashmap: HashMap<String, String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // TODO: Do better error handling
-    let format = template_hashmap.get("format").unwrap();
-    let template = template_hashmap.get("template").unwrap();
-    let folder_path = template_hashmap.get("folder_path").unwrap();
+    let format = template_hashmap
+        .get("format")
+        .ok_or("journal config missing 'format' key")?;
+    let template = template_hashmap
+        .get("template")
+        .ok_or("journal config missing 'template' key")?;
+    let folder_path = template_hashmap
+        .get("folder_path")
+        .ok_or("journal config missing 'folder_path' key")?;
 
     let date_formatted = current_date_formatted(format);
-    let command_path_str = command_folder_path(Sub::Journal).unwrap();
-    let full_path = format!("{command_path_str}/{folder_path}/{date_formatted}.md");
+    let command_path_str = command_folder_path(Sub::Journal)?;
+    let full_path = PathBuf::from(command_path_str)
+        .join(folder_path)
+        .join(format!("{date_formatted}.md"))
+        .to_string_lossy()
+        .into_owned();
 
     write_template_to_file(full_path, template.to_owned())
 }
@@ -251,10 +264,9 @@ mod tests {
         let template_dir_string = template_dir_str.to_string();
 
         let templates = templates_in_folder(template_dir_string).unwrap();
-        // BUG: Why is this returning template2 in index 0 and not template1?
         assert_eq!(
             templates,
-            vec!["template2".to_string(), "template1".to_string()]
+            vec!["template1".to_string(), "template2".to_string()]
         )
     }
 
@@ -280,10 +292,9 @@ mod tests {
         let template_dir_string = template_dir_str.to_string();
 
         let templates = templates_in_folder(template_dir_string).unwrap();
-        // BUG: Why is this returning template2 in index 0 and not template1?
         assert_eq!(
             templates,
-            vec!["template2".to_string(), "template1".to_string()]
+            vec!["template1".to_string(), "template2".to_string()]
         )
     }
 

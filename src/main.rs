@@ -36,7 +36,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             handle_note_command(&args.template, case_converted_title);
         }
         SubCommand::Journal { name } => {
-            handle_journal_commmand(name);
+            handle_journal_command(name);
         }
     }
 
