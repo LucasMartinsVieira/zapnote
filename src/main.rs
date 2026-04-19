@@ -42,7 +42,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             handle_note_command(&args.template, case_converted_title);
         }
         SubCommand::Journal(args) => {
-            handle_journal_command(&args.name, args.date.as_deref(), args.offset.as_deref());
+            let offset = args.offset_value();
+            handle_journal_command(&args.name, args.date.as_deref(), offset.as_deref());
         }
     }
 

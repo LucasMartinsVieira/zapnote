@@ -37,6 +37,50 @@ pub struct JournalArgs {
     pub name: String,
     #[arg(long)]
     pub date: Option<String>,
-    #[arg(long)]
-    pub offset: Option<String>,
+    #[arg(long, num_args = 1..=2, allow_hyphen_values = true)]
+    pub offset: Option<Vec<String>>,
+}
+
+impl JournalArgs {
+    pub fn offset_value(&self) -> Option<String> {
+        self.offset.as_ref().map(|parts| parts.join(" "))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_unquoted_negative_offset() {
+        let cli = Cli::try_parse_from(["zn", "journal", "day", "--offset", "-1", "day"]).unwrap();
+
+        let SubCommand::Journal(args) = cli.subcommand else {
+            panic!("expected journal subcommand");
+        };
+
+        assert_eq!(args.offset_value().as_deref(), Some("-1 day"));
+    }
+
+    #[test]
+    fn parses_unquoted_positive_offset() {
+        let cli = Cli::try_parse_from(["zn", "journal", "day", "--offset", "+1", "day"]).unwrap();
+
+        let SubCommand::Journal(args) = cli.subcommand else {
+            panic!("expected journal subcommand");
+        };
+
+        assert_eq!(args.offset_value().as_deref(), Some("+1 day"));
+    }
+
+    #[test]
+    fn parses_quoted_offset() {
+        let cli = Cli::try_parse_from(["zn", "journal", "day", "--offset", "+1 day"]).unwrap();
+
+        let SubCommand::Journal(args) = cli.subcommand else {
+            panic!("expected journal subcommand");
+        };
+
+        assert_eq!(args.offset_value().as_deref(), Some("+1 day"));
+    }
 }
