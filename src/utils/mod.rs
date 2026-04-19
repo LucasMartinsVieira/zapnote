@@ -1,7 +1,7 @@
 use crate::config::{Config, Sub};
 use directories::BaseDirs;
 use nix::unistd::execvp;
-use std::{ffi::CString, fs, path::Path, process};
+use std::{env, ffi::CString, fs, path::Path, path::PathBuf, process};
 
 pub mod casing;
 pub mod date;
@@ -25,7 +25,10 @@ pub fn command_folder_path(command: Sub) -> Result<String, Box<dyn std::error::E
 
 // TODO: Make this return a boolean to be used in the insert_template_function so the program can
 // be used not only to create but to access notes as well?
-pub fn check_note_name(name: &str, command: Sub) -> Result<(), Box<dyn std::error::Error>> {
+pub fn check_note_name(
+    name: &str,
+    command: Sub,
+) -> Result<Option<String>, Box<dyn std::error::Error>> {
     // Check if there's already a note with the same name specified by the user on the folder path
     match command {
         Sub::Note => {
@@ -36,7 +39,7 @@ pub fn check_note_name(name: &str, command: Sub) -> Result<(), Box<dyn std::erro
                 process::exit(1);
             }
 
-            let dir_contents: Vec<String> = fs::read_dir(path)?
+            let dir_contents: Vec<String> = fs::read_dir(&path)?
                 .filter_map(|entry| entry.ok())
                 .filter_map(|entry| entry.file_name().into_string().ok())
                 .filter(|name| name.ends_with(".md"))
@@ -44,21 +47,50 @@ pub fn check_note_name(name: &str, command: Sub) -> Result<(), Box<dyn std::erro
                 .collect();
 
             if dir_contents.contains(&name.to_owned()) {
-                eprintln!("There is already a note with the name: '{}'", &name);
-                process::exit(1)
+                let full_path = PathBuf::from(path)
+                    .join(format!("{name}.md"))
+                    .to_string_lossy()
+                    .into_owned();
+
+                return Ok(Some(full_path));
             }
         }
         Sub::Journal => unreachable!("journal duplicate checks require a resolved reference date"),
     }
 
-    Ok(())
+    Ok(None)
 }
 
-pub fn check_journal_note_path(full_path: &str) {
+pub fn check_journal_note_path(full_path: &str) -> Option<String> {
     if Path::new(full_path).is_file() {
-        eprintln!("There is already a note with the path: '{}'", full_path);
-        process::exit(1)
+        return Some(full_path.to_string());
     }
+
+    None
+}
+
+pub fn open_path_in_editor(path: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let no_editor = env::var("ZAPNOTE_NO_EDITOR")?;
+    let parsed_no_editor: bool = no_editor.parse().unwrap_or(false);
+
+    if parsed_no_editor {
+        process::exit(0);
+    }
+
+    let config = Config::read()?;
+    let default_editor = config.general.editor;
+
+    match default_editor.as_deref() {
+        Some("") | None => {
+            let editor = env::var("EDITOR").unwrap_or("vi".to_string());
+            run_editor(&editor, path);
+        }
+        Some(editor) => {
+            run_editor(editor, path);
+        }
+    }
+
+    Ok(())
 }
 
 fn run_editor(editor: &str, path: &str) {

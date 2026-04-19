@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    env, fs,
+    fs,
     path::{Path, PathBuf},
     process,
 };
@@ -10,13 +10,14 @@ use crate::{
     utils::{
         alternate_path,
         date::format_date,
+        open_path_in_editor,
         placeholder::{Placeholder, TemplateContext},
     },
 };
 
 use chrono::NaiveDate;
 
-use super::{check_journal_note_path, command_folder_path, run_editor};
+use super::{check_journal_note_path, command_folder_path};
 
 pub fn template_folder_path() -> Result<String, Box<dyn std::error::Error>> {
     // TODO: Refactor this for testing purposes?
@@ -185,27 +186,7 @@ pub fn write_template_to_file(
         }
     }
 
-    let no_editor = env::var("ZAPNOTE_NO_EDITOR")?;
-    let parsed_no_editor: bool = no_editor.parse().unwrap_or(false);
-
-    // If the flag --no-editor is passed by user, the program exist with status code 0, before
-    // running the run_editor function.
-    if parsed_no_editor {
-        process::exit(0);
-    }
-
-    let config = Config::read()?;
-    let default_editor = config.general.editor;
-
-    match default_editor.as_deref() {
-        Some("") | None => {
-            let editor = env::var("EDITOR").unwrap_or("vi".to_string());
-            run_editor(&editor, path);
-        }
-        Some(editor) => {
-            run_editor(editor, path);
-        }
-    }
+    open_path_in_editor(path)?;
 
     Ok(())
 }
@@ -250,7 +231,14 @@ pub fn insert_template_journal(
         .to_string_lossy()
         .into_owned();
 
-    check_journal_note_path(&full_path);
+    if let Some(existing_path) = check_journal_note_path(&full_path) {
+        println!(
+            "journal note already exists at '{}'; opening existing note",
+            existing_path
+        );
+        open_path_in_editor(&existing_path)?;
+        return Ok(());
+    }
 
     let context = TemplateContext::new(date_formatted, reference_date);
 
