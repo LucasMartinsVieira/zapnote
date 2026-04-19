@@ -1,57 +1,103 @@
-use std::env;
-
-use chrono::{Datelike, Local};
+use chrono::{DateTime, Local, NaiveDate};
 use regex::Regex;
 
-use crate::utils::quarter_from_week;
+use crate::utils::date::{apply_date_offset, format_date, format_datetime, parse_date_offset};
+
+pub struct TemplateContext {
+    pub title: String,
+    pub now: DateTime<Local>,
+    pub reference_date: NaiveDate,
+}
+
+impl TemplateContext {
+    pub fn new(title: String, reference_date: NaiveDate) -> Self {
+        Self {
+            title,
+            now: Local::now(),
+            reference_date,
+        }
+    }
+}
 
 pub struct Placeholder;
 
 impl Placeholder {
-    pub fn parse(mut template: String) -> String {
-        let time_regex_pattern = r"\{\{time(:([^{}]+))?\}\}";
-        let date_regex_pattern = r"\{\{date(:([^{}]+))?\}\}";
+    pub fn parse(template: String, context: &TemplateContext) -> String {
+        let regex = Regex::new(r"\{\{([^{}]+)\}\}").unwrap();
 
-        let note_title =
-            env::var("ZAPNOTE_NOTE_TITLE").unwrap_or("Note title not defined".to_string());
+        regex
+            .replace_all(&template, |caps: &regex::Captures| {
+                let raw = caps.get(1).unwrap().as_str().trim();
 
-        Self::parse_title(&mut template, &note_title);
-
-        Self::parse_placeholder(&mut template, time_regex_pattern, |caps| {
-            let format = caps.get(2).map_or("%H:%M", |m| m.as_str());
-            Self::format_with_quarter(format)
-        });
-
-        Self::parse_placeholder(&mut template, date_regex_pattern, |caps| {
-            let format = caps.get(2).map_or("%Y-%m-%d", |m| m.as_str());
-            Self::format_with_quarter(format)
-        });
-
-        template
+                Self::render_placeholder(raw, context)
+                    .unwrap_or_else(|| caps.get(0).unwrap().as_str().to_string())
+            })
+            .to_string()
     }
 
-    fn parse_title(template: &mut String, note_title: &str) {
-        *template = template.replace("{{title}}", note_title)
+    fn render_placeholder(raw: &str, context: &TemplateContext) -> Option<String> {
+        if raw == "title" {
+            return Some(context.title.clone());
+        }
+
+        if raw == "date" {
+            return Some(format_date(context.reference_date, "%Y-%m-%d"));
+        }
+
+        if raw == "time" {
+            return Some(format_datetime(context.now, "%H:%M"));
+        }
+
+        if let Some(format) = raw.strip_prefix("date:") {
+            return Some(format_date(context.reference_date, format));
+        }
+
+        if let Some(format) = raw.strip_prefix("time:") {
+            return Some(format_datetime(context.now, format));
+        }
+
+        if let Some(attributes) = raw.strip_prefix("date ") {
+            return Self::render_date_with_attributes(attributes, context);
+        }
+
+        if let Some(attributes) = raw.strip_prefix("time ") {
+            return Self::render_time_with_attributes(attributes, context);
+        }
+
+        None
     }
 
-    fn parse_placeholder<F>(template: &mut String, regex_pattern: &str, replacement_fn: F)
-    where
-        F: Fn(&regex::Captures) -> String,
-    {
-        let regex = Regex::new(regex_pattern).unwrap();
+    fn render_date_with_attributes(attributes: &str, context: &TemplateContext) -> Option<String> {
+        let parsed = Self::parse_attributes(attributes);
+        let mut date = context.reference_date;
 
-        *template = regex
-            .replace_all(template, |caps: &regex::Captures| replacement_fn(caps))
-            .to_string();
+        if let Some(offset) = parsed.get("offset") {
+            let parsed_offset = parse_date_offset(offset).ok()?;
+            date = apply_date_offset(date, parsed_offset);
+        }
+
+        let format = parsed
+            .get("format")
+            .map(String::as_str)
+            .unwrap_or("%Y-%m-%d");
+
+        Some(format_date(date, format))
     }
 
-    fn format_with_quarter(format: &str) -> String {
-        let now = Local::now();
-        let quarter = quarter_from_week(now.iso_week().week());
+    fn render_time_with_attributes(attributes: &str, context: &TemplateContext) -> Option<String> {
+        let parsed = Self::parse_attributes(attributes);
+        let format = parsed.get("format").map(String::as_str).unwrap_or("%H:%M");
 
-        let formatted_date = format.replace("%Q", &quarter.to_string());
+        Some(format_datetime(context.now, format))
+    }
 
-        now.format(&formatted_date).to_string()
+    fn parse_attributes(attributes: &str) -> std::collections::HashMap<String, String> {
+        let regex = Regex::new(r#"([a-zA-Z_]+)\s*=\s*"([^"]*)""#).unwrap();
+
+        regex
+            .captures_iter(attributes)
+            .map(|captures| (captures[1].to_string(), captures[2].to_string()))
+            .collect()
     }
 }
 
@@ -59,85 +105,57 @@ impl Placeholder {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_parse_title() {
-        let note_title = "Some kind of Wonderfull";
-        let mut template = "{{title}}".to_string();
-
-        Placeholder::parse_title(&mut template, note_title);
-
-        assert_eq!(template, note_title);
+    fn context(reference_date: NaiveDate) -> TemplateContext {
+        TemplateContext::new("Daily Note".to_string(), reference_date)
     }
 
     #[test]
-    fn test_parse_title_wrong_placeholder() {
-        let note_title = "Young Turks";
-        let mut template = "{{titl}}".to_string();
+    fn parses_title_placeholder() {
+        let rendered = Placeholder::parse(
+            "{{title}}".to_string(),
+            &context(NaiveDate::from_ymd_opt(2026, 4, 19).unwrap()),
+        );
 
-        Placeholder::parse_title(&mut template, note_title);
-
-        assert_ne!(template, note_title);
+        assert_eq!(rendered, "Daily Note");
     }
 
     #[test]
-    fn test_format_with_quarter() {
-        let quarter_format = "%Q";
+    fn keeps_legacy_date_format_placeholder() {
+        let rendered = Placeholder::parse(
+            "{{date:%Y-Q%Q}}".to_string(),
+            &context(NaiveDate::from_ymd_opt(2026, 4, 19).unwrap()),
+        );
 
-        let now = Local::now();
-        let quarter = quarter_from_week(now.iso_week().week()).to_string();
-
-        let formatted = Placeholder::format_with_quarter(quarter_format);
-
-        assert_eq!(formatted, quarter);
+        assert_eq!(rendered, "2026-Q2");
     }
 
     #[test]
-    fn test_parse_placeholder_time() {
-        let mut template = "{{time}}".to_string();
-        let time_regex_pattern = r"\{\{time(:([^{}]+))?\}\}";
+    fn renders_date_with_offset_attributes() {
+        let rendered = Placeholder::parse(
+            "{{date offset=\"-1 day\" format=\"%Y-%m-%d\"}}".to_string(),
+            &context(NaiveDate::from_ymd_opt(2026, 4, 19).unwrap()),
+        );
 
-        let current_time = Local::now().format("%H:%M").to_string();
-
-        Placeholder::parse_placeholder(&mut template, time_regex_pattern, |caps| {
-            let format = caps.get(2).map_or("%H:%M", |m| m.as_str());
-            Placeholder::format_with_quarter(format)
-        });
-
-        assert_eq!(template, current_time);
+        assert_eq!(rendered, "2026-04-18");
     }
 
     #[test]
-    fn test_parse_placeholder_date() {
-        let mut template = "{{date}}".to_string();
-        let date_regex_pattern = r"\{\{date(:([^{}]+))?\}\}";
+    fn renders_iso_week_from_reference_date() {
+        let rendered = Placeholder::parse(
+            "{{date format=\"%G-W%V\"}}".to_string(),
+            &context(NaiveDate::from_ymd_opt(2026, 4, 19).unwrap()),
+        );
 
-        let current_date = Local::now().format("%Y-%m-%d").to_string();
-
-        Placeholder::parse_placeholder(&mut template, date_regex_pattern, |caps| {
-            let format = caps.get(2).map_or("%Y-%m-%d", |m| m.as_str());
-            Placeholder::format_with_quarter(format)
-        });
-
-        assert_eq!(template, current_date);
+        assert_eq!(rendered, "2026-W16");
     }
 
     #[test]
-    fn test_parse_placeholder_with_quarter_template() {
-        let mut template = "{{date:%Y-Q%Q}}".to_string();
-        let date_regex_pattern = r"\{\{date(:([^{}]+))?\}\}";
+    fn leaves_unknown_placeholders_unchanged() {
+        let rendered = Placeholder::parse(
+            "{{unknown}}".to_string(),
+            &context(NaiveDate::from_ymd_opt(2026, 4, 19).unwrap()),
+        );
 
-        let current_year = Local::now().format("%Y").to_string();
-        let current_week = Local::now().iso_week().week();
-
-        let current_quarter = quarter_from_week(current_week);
-
-        let asserted = format!("{}-Q{}", current_year, current_quarter);
-
-        Placeholder::parse_placeholder(&mut template, date_regex_pattern, |caps| {
-            let format = caps.get(2).map_or("%Y-%m-%d", |m| m.as_str());
-            Placeholder::format_with_quarter(format)
-        });
-
-        assert_eq!(template, asserted);
+        assert_eq!(rendered, "{{unknown}}");
     }
 }

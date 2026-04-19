@@ -13,3 +13,9 @@ name = "day"          # Usage: `zn journal day` to run the program
 format = "%Y-%m-%d"   # Reference: https://docs.rs/chrono/latest/chrono/format/strftime/index.html#specifiers, e.g., "2024-09-19"
 template = "daily"    # Relative to general.template_folder_path, e.g., ~/Notes/journal/templates/daily
 folder_path = "daily" # Relative to general.jounal_folder_path, e.g., ~/Notes/journal/daily
+
+[[journal]]
+name = "week"         # Usage: `zn journal week --date 2026-W1`
+format = "%G-W%V"     # Produces ISO week names like "2026-W16"
+template = "weekly"
+folder_path = "weekly"

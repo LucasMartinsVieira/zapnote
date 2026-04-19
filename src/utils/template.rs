@@ -7,10 +7,16 @@ use std::{
 
 use crate::{
     config::{Config, Sub},
-    utils::{alternate_path, placeholder::Placeholder},
+    utils::{
+        alternate_path,
+        date::format_date,
+        placeholder::{Placeholder, TemplateContext},
+    },
 };
 
-use super::{command_folder_path, current_date_formatted, run_editor};
+use chrono::NaiveDate;
+
+use super::{check_journal_note_path, command_folder_path, run_editor};
 
 pub fn template_folder_path() -> Result<String, Box<dyn std::error::Error>> {
     // TODO: Refactor this for testing purposes?
@@ -137,7 +143,7 @@ pub fn check_template(template: &str) -> Result<(), Box<dyn std::error::Error>> 
     Ok(())
 }
 
-pub fn template_file_contents(template: String) -> Option<String> {
+pub fn template_file_contents(template: String, context: &TemplateContext) -> Option<String> {
     let template_folder_path = template_folder_path().ok();
 
     if let Some(path) = template_folder_path {
@@ -147,7 +153,7 @@ pub fn template_file_contents(template: String) -> Option<String> {
         template_file_path.push(&template_name_with_extension);
 
         let template_file_contents = fs::read_to_string(template_file_path).ok()?;
-        let parsed_template_file_contents = Placeholder::parse(template_file_contents);
+        let parsed_template_file_contents = Placeholder::parse(template_file_contents, context);
 
         Some(parsed_template_file_contents)
     } else {
@@ -158,11 +164,12 @@ pub fn template_file_contents(template: String) -> Option<String> {
 pub fn write_template_to_file(
     full_path: String,
     template: String,
+    context: &TemplateContext,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let command_path_buf = PathBuf::from(&full_path);
     let path = command_path_buf.to_str().unwrap();
 
-    let template_file_contents = template_file_contents(template.to_string());
+    let template_file_contents = template_file_contents(template.to_string(), context);
 
     if let Some(contents) = template_file_contents {
         if let Some(parent) = Path::new(&path).parent() {
@@ -216,11 +223,14 @@ pub fn insert_template_to_file(
         .to_string_lossy()
         .into_owned();
 
-    write_template_to_file(full_path, template)
+    let context = TemplateContext::new(name, chrono::Local::now().date_naive());
+
+    write_template_to_file(full_path, template, &context)
 }
 
 pub fn insert_template_journal(
     template_hashmap: HashMap<String, String>,
+    reference_date: NaiveDate,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let format = template_hashmap
         .get("format")
@@ -232,7 +242,7 @@ pub fn insert_template_journal(
         .get("folder_path")
         .ok_or("journal config missing 'folder_path' key")?;
 
-    let date_formatted = current_date_formatted(format);
+    let date_formatted = format_date(reference_date, format);
     let command_path_str = command_folder_path(Sub::Journal)?;
     let full_path = PathBuf::from(command_path_str)
         .join(folder_path)
@@ -240,7 +250,11 @@ pub fn insert_template_journal(
         .to_string_lossy()
         .into_owned();
 
-    write_template_to_file(full_path, template.to_owned())
+    check_journal_note_path(&full_path);
+
+    let context = TemplateContext::new(date_formatted, reference_date);
+
+    write_template_to_file(full_path, template.to_owned(), &context)
 }
 
 #[cfg(test)]

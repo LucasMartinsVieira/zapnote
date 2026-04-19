@@ -2,6 +2,7 @@ use crate::errors::config::ConfigError;
 use directories::ProjectDirs;
 use serde::Deserialize;
 use std::{
+    env,
     fs::{self, File},
     io::{self, Write},
     path::PathBuf,
@@ -56,15 +57,15 @@ impl Config {
         Some(path)
     }
     pub fn read() -> Result<Config, ConfigError> {
-        let config_path = Self::default_path();
-
-        if let Some(path) = config_path {
-            let config_file_contents = fs::read_to_string(path)?;
-            let config: Config = toml::from_str(&config_file_contents)?;
-            Ok(config)
+        let path = if let Ok(custom) = env::var("ZAPNOTE_CONFIG_PATH") {
+            PathBuf::from(custom)
         } else {
-            Err(ConfigError::ConfigPathNotFound)
-        }
+            Self::default_path().ok_or(ConfigError::ConfigPathNotFound)?
+        };
+
+        let config_file_contents = fs::read_to_string(path)?;
+        let config: Config = toml::from_str(&config_file_contents)?;
+        Ok(config)
     }
     pub fn load() -> Option<PathBuf> {
         // Creates config directory if doesn't exist.

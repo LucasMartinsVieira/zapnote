@@ -1,13 +1,10 @@
-use crate::{
-    config::{Config, Sub},
-    utils::template::specific_template_info,
-};
-use chrono::{Datelike, Local};
+use crate::config::{Config, Sub};
 use directories::BaseDirs;
 use nix::unistd::execvp;
 use std::{ffi::CString, fs, path::Path, process};
 
 pub mod casing;
+pub mod date;
 pub mod placeholder;
 pub mod template;
 
@@ -51,33 +48,17 @@ pub fn check_note_name(name: &str, command: Sub) -> Result<(), Box<dyn std::erro
                 process::exit(1)
             }
         }
-        Sub::Journal => {
-            let hashmap_info = specific_template_info(Sub::Journal, name).unwrap();
-
-            let folder_path = match hashmap_info.get("folder_path") {
-                Some(folder_path_value) => {
-                    let command_path = command_folder_path(command)?;
-                    format!("{}/{}", command_path, folder_path_value)
-                }
-                None => todo!(),
-            };
-
-            let journal_entry = match hashmap_info.get("format") {
-                Some(format_value) => current_date_formatted(format_value),
-                None => todo!(),
-            };
-
-            let full_path = format!("{}/{}.md", folder_path, journal_entry);
-
-            if Path::new(&full_path).is_file() {
-                // BUG: Make this return the correct path, and not a path with two slashes.
-                eprintln!("There is already a note with the path: '{}'", &full_path);
-                process::exit(1)
-            }
-        }
+        Sub::Journal => unreachable!("journal duplicate checks require a resolved reference date"),
     }
 
     Ok(())
+}
+
+pub fn check_journal_note_path(full_path: &str) {
+    if Path::new(full_path).is_file() {
+        eprintln!("There is already a note with the path: '{}'", full_path);
+        process::exit(1)
+    }
 }
 
 fn run_editor(editor: &str, path: &str) {
@@ -110,25 +91,6 @@ pub fn quarter_from_week(week: u32) -> u32 {
         40..=53 => 4,
         _ => unreachable!(),
     }
-}
-
-// Function to add support for %Q (year quarter) not available on chrono crate.
-fn process_format_string(format: &str) -> String {
-    let week_number = Local::now().naive_local().iso_week().week();
-    let quarter = quarter_from_week(week_number);
-
-    format.replace("%Q", &quarter.to_string())
-}
-
-// TODO: Test this function
-pub fn current_date_formatted(format: &str) -> String {
-    let current_date = Local::now();
-
-    let formatted = process_format_string(format);
-
-    let date_formatted = current_date.format(&formatted);
-
-    date_formatted.to_string()
 }
 
 #[cfg(test)]
@@ -174,41 +136,12 @@ mod tests {
     }
 
     #[test]
-    fn test_process_format_string() {
-        let test_cases = [
-            (1, "Q1"),
-            (13, "Q1"),
-            (14, "Q2"),
-            (26, "Q2"),
-            (27, "Q3"),
-            (39, "Q3"),
-            (40, "Q4"),
-            (53, "Q4"),
-        ];
+    fn check_journal_note_path_detects_existing_file() {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let file_path = temp_dir.path().join("existing.md");
 
-        for (week, expected_quarter) in test_cases {
-            // This format outputs the quarter as "Q1", "Q2", "Q3", or "Q4" based on the week number.
-            let format = "Q%Q".to_string();
+        std::fs::write(&file_path, "content").unwrap();
 
-            let result =
-                process_format_string(&format.replace("%Q", &quarter_from_week(week).to_string()));
-
-            assert_eq!(result, expected_quarter, "Failed on week: {}", result);
-        }
-    }
-
-    #[test]
-    fn test_current_date_formatted() {
-        let format_str = "%Y-%m-%d Q%Q";
-        let result = current_date_formatted(format_str);
-
-        // Ensure that %Q has been replaced with the appropriate quarter number
-        // based on the current week number.
-        assert!(
-            result.contains("Q1")
-                || result.contains("Q2")
-                || result.contains("Q3")
-                || result.contains("Q4")
-        );
+        assert!(Path::new(file_path.to_str().unwrap()).is_file());
     }
 }

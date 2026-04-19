@@ -3,7 +3,7 @@ use crate::journal::*;
 use crate::note::*;
 use clap::Parser;
 use config::Config;
-use std::env;
+use std::{env, process};
 use utils::casing::convert_case;
 
 mod cli;
@@ -16,7 +16,15 @@ mod utils;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
-    Config::load();
+    if let Some(config_path) = &cli.config {
+        if !config_path.exists() {
+            eprintln!("config file not found: {}", config_path.display());
+            process::exit(1);
+        }
+        env::set_var("ZAPNOTE_CONFIG_PATH", config_path);
+    } else {
+        Config::load();
+    }
 
     if cli.no_editor {
         env::set_var("ZAPNOTE_NO_EDITOR", String::from("true"));
@@ -31,12 +39,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let note_name = args.name.join(" ");
             let case_converted_title = convert_case(note_name);
 
-            env::set_var("ZAPNOTE_NOTE_TITLE", &case_converted_title);
-
             handle_note_command(&args.template, case_converted_title);
         }
-        SubCommand::Journal { name } => {
-            handle_journal_command(name);
+        SubCommand::Journal(args) => {
+            handle_journal_command(&args.name, args.date.as_deref(), args.offset.as_deref());
         }
     }
 
