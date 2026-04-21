@@ -1,7 +1,7 @@
 use crate::config::{Config, Sub};
 use directories::BaseDirs;
 use nix::unistd::execvp;
-use std::{env, ffi::CString, fs, path::Path, path::PathBuf, process};
+use std::{env, ffi::CString, fs, io, path::Path, path::PathBuf, process};
 
 pub mod casing;
 pub mod date;
@@ -34,10 +34,7 @@ pub fn check_note_name(
         Sub::Note => {
             let path = command_folder_path(command)?;
 
-            if let Err(err) = fs::create_dir_all(&path) {
-                eprintln!("error creating directories: {:?}", err);
-                process::exit(1);
-            }
+            fs::create_dir_all(&path)?;
 
             let dir_contents: Vec<String> = fs::read_dir(&path)?
                 .filter_map(|entry| entry.ok())
@@ -74,7 +71,7 @@ pub fn open_path_in_editor(path: &str) -> Result<(), Box<dyn std::error::Error>>
     let parsed_no_editor: bool = no_editor.parse().unwrap_or(false);
 
     if parsed_no_editor {
-        process::exit(0);
+        return Ok(());
     }
 
     let config = Config::read()?;
@@ -99,7 +96,8 @@ fn run_editor(editor: &str, path: &str) {
     let args = [editor_cstr.clone(), path_cstr];
 
     let Err(err) = execvp(&editor_cstr, &args);
-    eprintln!("error executing {}: {}", editor, err);
+    let error = io::Error::other(format!("error executing {editor}: {err}"));
+    eprintln!("{error}");
     process::exit(1);
 }
 

@@ -1,6 +1,6 @@
 use crate::errors::config::ConfigError;
 use directories::ProjectDirs;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{
     env,
     fs::{self, File},
@@ -34,7 +34,7 @@ pub enum CaseStyle {
     Original,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct JournalConfig {
     pub name: String,
     pub format: String,

@@ -1,12 +1,10 @@
 use std::{
-    collections::HashMap,
-    fs,
+    fs, io,
     path::{Path, PathBuf},
-    process,
 };
 
 use crate::{
-    config::{Config, Sub},
+    config::{Config, JournalConfig, Sub},
     utils::{
         alternate_path,
         date::format_date,
@@ -16,94 +14,73 @@ use crate::{
 };
 
 use chrono::NaiveDate;
+use serde::Serialize;
 
 use super::{check_journal_note_path, command_folder_path};
 
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct TemplateEntry {
+    pub name: String,
+    pub path: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct JournalEntry {
+    pub name: String,
+    pub format: String,
+    pub template: String,
+    pub folder_path: String,
+}
+
 pub fn template_folder_path() -> Result<String, Box<dyn std::error::Error>> {
-    // TODO: Refactor this for testing purposes?
     let config = Config::read()?;
     let template_path = alternate_path(config.general.template_folder_path);
     Ok(template_path)
 }
 
-fn specific_template(sub: Sub) -> Option<Vec<HashMap<String, String>>> {
-    let config = Config::read().ok()?;
+pub fn template_entries() -> Result<Vec<TemplateEntry>, Box<dyn std::error::Error>> {
+    let folder_path = template_folder_path()?;
+    let templates = templates_in_folder(folder_path.clone())
+        .ok_or_else(|| io::Error::other("no templates found in template folder"))?;
 
-    match sub {
-        Sub::Note => None,
-        Sub::Journal => {
-            let mut output = Vec::new();
-
-            if let Some(journal_entries) = config.journal {
-                journal_entries.iter().for_each(|entry| {
-                    let mut entry_map = HashMap::new();
-
-                    entry_map.insert("name".to_string(), entry.name.to_string());
-                    entry_map.insert("format".to_string(), entry.format.to_string());
-                    entry_map.insert("template".to_string(), entry.template.to_string());
-                    entry_map.insert("folder_path".to_string(), entry.folder_path.to_string());
-
-                    output.push(entry_map)
-                })
-            } else {
-                eprintln!("No templates found in configuration file");
-                process::exit(1);
-            }
-
-            Some(output)
-        }
-    }
+    Ok(templates
+        .into_iter()
+        .map(|name| TemplateEntry {
+            path: PathBuf::from(&folder_path)
+                .join(format!("{name}.md"))
+                .to_string_lossy()
+                .into_owned(),
+            name,
+        })
+        .collect())
 }
 
-pub fn specific_template_info(sub: Sub, name: &str) -> Option<HashMap<String, String>> {
-    let mut template_info = HashMap::new();
+pub fn journal_entries() -> Result<Vec<JournalEntry>, Box<dyn std::error::Error>> {
+    let config = Config::read()?;
+    Ok(config
+        .journal
+        .unwrap_or_default()
+        .into_iter()
+        .map(|entry| JournalEntry {
+            name: entry.name,
+            format: entry.format,
+            template: entry.template,
+            folder_path: entry.folder_path,
+        })
+        .collect())
+}
 
-    match sub {
-        Sub::Note => None,
-        Sub::Journal => {
-            if let Some(entries) = specific_template(Sub::Journal) {
-                // Flag to track if the name was found
-                let mut found = false;
-
-                entries.iter().for_each(|entry| {
-                    // Use the get method to get the value of the name key
-                    if let Some(name_value) = entry.get("name") {
-                        // Check if the name matches
-                        if name_value == name {
-                            found = true;
-
-                            // Access other values in the HashMap
-                            if let Some(format_value) = entry.get("format") {
-                                template_info
-                                    .insert("format".to_string(), format_value.to_string());
-                            }
-                            if let Some(template_value) = entry.get("template") {
-                                template_info
-                                    .insert("template".to_string(), template_value.to_string());
-                            }
-                            if let Some(folder_path_value) = entry.get("folder_path") {
-                                template_info.insert(
-                                    "folder_path".to_string(),
-                                    folder_path_value.to_string(),
-                                );
-                            }
-                        }
-                    }
-                });
-
-                if !found {
-                    eprintln!("No entry found for the name '{}'", name);
-                    process::exit(1);
-                }
-            }
-            Some(template_info)
-        }
-    }
+pub fn specific_template_info(name: &str) -> Result<JournalConfig, Box<dyn std::error::Error>> {
+    let config = Config::read()?;
+    config
+        .journal
+        .unwrap_or_default()
+        .into_iter()
+        .find(|entry| entry.name == name)
+        .ok_or_else(|| io::Error::other(format!("no journal entry found for '{name}'")).into())
 }
 
 pub fn templates_in_folder(path: String) -> Option<Vec<String>> {
-    // Search in template directory for markdown files, put them in a Vec<String> and remove .md
-    // from the files name
     let mut dir_contents: Vec<String> = fs::read_dir(path)
         .ok()?
         .filter_map(|entry| entry.ok())
@@ -117,30 +94,19 @@ pub fn templates_in_folder(path: String) -> Option<Vec<String>> {
 }
 
 pub fn check_template(template: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let path = template_folder_path()?;
-    let templates_vec = templates_in_folder(path);
+    let template_names: Vec<String> = template_entries()?
+        .into_iter()
+        .map(|entry| entry.name)
+        .collect();
 
-    // Check if template specified by user exists on template folder
-    match templates_vec {
-        Some(vec) => {
-            if !vec.contains(&template.to_owned()) {
-                eprintln!("template '{}' doesn't exist in template folder", template);
-                println!();
-
-                println!("Available templates: ");
-                println!();
-
-                // Iterate over the vector of template names and print each template name.
-                vec.iter()
-                    .for_each(|template_name| println!("{}", template_name));
-                process::exit(1)
-            }
-        }
-        None => {
-            eprintln!("No templates found on folder");
-            process::exit(1)
-        }
+    if !template_names.contains(&template.to_owned()) {
+        return Err(io::Error::other(format!(
+            "template '{template}' doesn't exist in template folder. available templates: {}",
+            template_names.join(", ")
+        ))
+        .into());
     }
+
     Ok(())
 }
 
@@ -167,37 +133,24 @@ pub fn write_template_to_file(
     template: String,
     context: &TemplateContext,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let command_path_buf = PathBuf::from(&full_path);
-    let path = command_path_buf.to_str().unwrap();
+    let template_file_contents = template_file_contents(template.clone(), context)
+        .ok_or_else(|| io::Error::other(format!("failed to load template '{template}'")))?;
 
-    let template_file_contents = template_file_contents(template.to_string(), context);
-
-    if let Some(contents) = template_file_contents {
-        if let Some(parent) = Path::new(&path).parent() {
-            if let Err(err) = fs::create_dir_all(parent) {
-                eprintln!("error creating directories: {:?}", err);
-                process::exit(1);
-            }
-        }
-
-        if let Err(err) = fs::write(path, contents) {
-            eprintln!("error writing template into file: {:?}", err);
-            process::exit(1)
-        }
+    if let Some(parent) = Path::new(&full_path).parent() {
+        fs::create_dir_all(parent)?;
     }
 
-    open_path_in_editor(path)?;
+    fs::write(&full_path, template_file_contents)?;
+    open_path_in_editor(&full_path)?;
 
     Ok(())
 }
 
-// TODO: Do a function for inserting the template into the file, being a specific template from the
-// config file or not
 pub fn insert_template_to_file(
     template: String,
     name: String,
     command: Sub,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<String, Box<dyn std::error::Error>> {
     let command_path_str = command_folder_path(command)?;
     let full_path = PathBuf::from(command_path_str)
         .join(format!("{name}.md"))
@@ -206,43 +159,31 @@ pub fn insert_template_to_file(
 
     let context = TemplateContext::new(name, chrono::Local::now().date_naive());
 
-    write_template_to_file(full_path, template, &context)
+    write_template_to_file(full_path.clone(), template, &context)?;
+    Ok(full_path)
 }
 
 pub fn insert_template_journal(
-    template_hashmap: HashMap<String, String>,
+    journal: &JournalConfig,
     reference_date: NaiveDate,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let format = template_hashmap
-        .get("format")
-        .ok_or("journal config missing 'format' key")?;
-    let template = template_hashmap
-        .get("template")
-        .ok_or("journal config missing 'template' key")?;
-    let folder_path = template_hashmap
-        .get("folder_path")
-        .ok_or("journal config missing 'folder_path' key")?;
-
-    let date_formatted = format_date(reference_date, format);
+) -> Result<String, Box<dyn std::error::Error>> {
+    let date_formatted = format_date(reference_date, &journal.format);
     let command_path_str = command_folder_path(Sub::Journal)?;
     let full_path = PathBuf::from(command_path_str)
-        .join(folder_path)
+        .join(&journal.folder_path)
         .join(format!("{date_formatted}.md"))
         .to_string_lossy()
         .into_owned();
 
     if let Some(existing_path) = check_journal_note_path(&full_path) {
-        println!(
-            "journal note already exists at '{}'; opening existing note",
-            existing_path
-        );
         open_path_in_editor(&existing_path)?;
-        return Ok(());
+        return Ok(existing_path);
     }
 
     let context = TemplateContext::new(date_formatted, reference_date);
 
-    write_template_to_file(full_path, template.to_owned(), &context)
+    write_template_to_file(full_path.clone(), journal.template.clone(), &context)?;
+    Ok(full_path)
 }
 
 #[cfg(test)]
@@ -325,5 +266,33 @@ mod tests {
         let templates = templates_in_folder("this/should/not/exist".to_string());
 
         assert!(templates.is_none());
+    }
+
+    #[test]
+    fn template_entries_include_template_paths() {
+        let template_dir = TempDir::new().unwrap();
+        let template_path = template_dir.path().join("daily.md");
+        fs::write(&template_path, "content").unwrap();
+
+        let entries = templates_in_folder(template_dir.path().to_string_lossy().into_owned())
+            .unwrap()
+            .into_iter()
+            .map(|name| TemplateEntry {
+                path: template_dir
+                    .path()
+                    .join(format!("{name}.md"))
+                    .to_string_lossy()
+                    .into_owned(),
+                name,
+            })
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            entries,
+            vec![TemplateEntry {
+                name: "daily".to_string(),
+                path: template_path.to_string_lossy().into_owned(),
+            }]
+        );
     }
 }
